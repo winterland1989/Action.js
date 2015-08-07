@@ -24,7 +24,7 @@ new Action (cb) ->
     'error handled'
 .go (data) -> console.log data + '!'
 ```
-# difference from a promise
+# Difference from a promise
 
 + The action is lazily called, so if you need call go when you want to fire an action.
 
@@ -37,11 +37,11 @@ new Action (cb) ->
     catch e then e
 ```
 
-Yes, when error happened, you return it, so that following action wont fire and a guard after it can handle.
+> Yes, when error happened, you return it, so that following action wont fire and a guard after it can handle.
 
 + You can now store the action and fire them multiple times.
 ```coffee
-a = Action (cb) ->
+a = new Action (cb) ->
     readFile ('whatever', (data) -> cb data)
 
 a.go (data) ->
