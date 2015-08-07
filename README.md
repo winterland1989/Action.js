@@ -7,7 +7,7 @@ A sane way to chain asynchronous actions.
 Cont monad in haskell lacks a javascript version, so i decide to make one.
 
 # Examples
-
+```coffee
 new Action (cb) ->
     setTimeout (() -> cb 'foo'), 1000
 .next (data) ->
@@ -23,14 +23,14 @@ new Action (cb) ->
     console.log e
     'error handled'
 .go (data) -> console.log data + '!'
-
+```
 # difference from a promise
 
 + The action is lazily called, so if you need call go when you want to fire an action.
 
 + All error need catch explicitly, e.g.
 
-```coffeescript
+```coffee
 .next (data) ->
     try
         launchTheMissle(...)
@@ -40,7 +40,7 @@ new Action (cb) ->
 Yes, when error happened, you return it, so that following action wont fire and a guard after it can handle.
 
 + You can now store the action and fire them multiple times.
-```coffeescript
+```coffee
 a = Action (cb) ->
     readFile ('whatever', (data) -> cb data)
 
