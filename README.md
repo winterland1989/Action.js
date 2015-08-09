@@ -36,16 +36,16 @@ exampleAction.go console.log
 
 Difference from a promise
 ------------
-Action has different semantics, it's not a state machine, but a function reference waiting for next continuation, thus it can be reuse, sometimes it's more suitable than a promise.
+Action has different semantics, inside it's not a state machine, but a function reference waiting for next continuation, so you can build and an Actions chain, the chain can be fired many times, rather than resolved once and waiting for consume, sometimes it's more suitable than a promise, and it's very easy if you want to memorize an Action's resolved value.
 
-Another difference is that if you want to pass error to downstream, you simply return it inside your continuation, following continuation won't fire until the error reach a guard.
+Another difference is that if you want to pass errors to downstream, you simply return them inside your continuation, following continuations won't run until the error reach a guard.
 
-Checkout the Document, it's really simple, and check the soure code if you feel interesting, it's less than 200 lines.
+Check out the Document, it's really simple, and check the soure code if you feel interesting, it's less than 150 lines.
 
-Document
---------
+Document and tutorial
+---------------------
 
-First you construct an Action like you contruct a Promise, the only difference is an Action won't run immediately at next tick.
+First you construct an Action like you contruct a Promise, the differences are that an Action won't run immediately at next tick, and any errors should be return, we will talk about errors later:
 
 ```coffee
 exampleAction = new Action (cb) ->
@@ -150,7 +150,7 @@ It's a design choice that Action.js don't catch errors by default, it will make 
 
 The price is we can't catch your error instead of yourself and provide long-stack-trace, hopefully this design choice can help you write better error handling code rather than bite you.
 
-Notice that if you don't guard errors before go, and error happened, then go will throw it, this behavior may make sense or not, there's another function to fire a action but also can capture error, it's sort of:
+Notice that if you don't guard errors before go, and error happened, then go will throw it, this behavior may make sense or not, there's another function to fire an Action but also can capture error, it's sort of:
 
     Action.prototype._go :: ( cb :: (Error | data) -> a ) -> b
 
