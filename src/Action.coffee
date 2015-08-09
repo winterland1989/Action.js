@@ -81,10 +81,7 @@ Action.retry = (times, action) ->
 Action.gapRetry = (times, interval, action) ->
     a = action.guard (e) ->
         new Action (cb) ->
-            setTimeout(
-                -> cb()
-                interval
-            )
+            setTimeout cb, interval
         .next ->
             if times-- != 0 then a
             else new Error 'Retry limit reached'

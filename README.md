@@ -278,10 +278,7 @@ Action.gapRetry will take an extra parameter as interval(in ms) between two retr
 Action.gapRetry = (times, interval, action) ->
     a = action.guard (e) ->
         new Action (cb) ->
-            setTimeout(
-                -> cb()
-                interval
-            )
+            setTimeout cb, interval
         .next ->
             if times-- != 0 then a
             else new Error 'Retry limit reached'
