@@ -248,12 +248,12 @@ testAction
 
 .next ->
     new Action (cb) ->
-        testMultiTry = Action.multiTry ['data1', 'data2'], monadicActionFoo
-        testMultiTry
+        testSequenceTry = Action.sequenceTry ['data1', 'data2'], monadicActionFoo
+        testSequenceTry
         .next (data) ->
             assertData data, 'data1foo'
         .go ->
-            console.log 'Action.multiTry without error ok'
+            console.log 'Action.sequenceTry without error ok'
             cb()
 
 .next ->
@@ -266,25 +266,25 @@ testAction
             50
         )
     new Action (cb) ->
-        testMultiTryWithError = Action.multiTry [0.13, 0.43, 0.91, 0.14], monadicActionBigger
-        testMultiTryWithError
+        testSequenceTryWithError = Action.sequenceTry [0.13, 0.43, 0.91, 0.14], monadicActionBigger
+        testSequenceTryWithError
         .next (data) ->
             assertData data, 'good: 0.91'
         .go ->
-            console.log 'Action.multiTry with error ok'
+            console.log 'Action.sequenceTry with error ok'
             cb()
 
 .next ->
 
     new Action (cb) ->
-        testMultiTryWithAllError = Action.multiTry ['', '', ''], monadicActionFail
-        testMultiTryWithAllError
+        testSequenceTryWithAllError = Action.sequenceTry ['', '', ''], monadicActionFail
+        testSequenceTryWithAllError
         .next (data) ->
             assertData data, 'this wont fire'
         .guard (e) ->
             assertData e.message, 'Try limit reached'
         .go ->
-            console.log 'Action.multiTry with all error ok'
+            console.log 'Action.sequenceTry with all error ok'
             cb()
 
 

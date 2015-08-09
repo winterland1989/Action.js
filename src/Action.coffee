@@ -1,4 +1,4 @@
-doNothing = ->
+ignore = ->
 
 class Action
     constructor: (@action) ->
@@ -57,7 +57,7 @@ Action.any = (actions) ->
         for action in actions
             action._go (data) ->
                 cb data
-                cb = doNothing
+                cb = ignore
 
 Action.anySuccess = (actions) ->
     countDown = actions.length
@@ -67,7 +67,7 @@ Action.anySuccess = (actions) ->
                 countDown--
                 if data not instanceof Error
                     cb data
-                    cb = doNothing
+                    cb = ignore
                     countDown = -1
                 else if countDown == 0
                     cb new Error 'All actions failed'
@@ -89,7 +89,7 @@ Action.all = (actions) ->
                 countDown--
                 if data instanceof Error
                     cb data
-                    cb = doNothing
+                    cb = ignore
                 else
                     results[index] = data
                     if countDown == 0
@@ -106,24 +106,22 @@ Action.allSuccess = (actions) ->
                 if countDown == 0
                     cb results
 
-Action.multiTry = (args, mondicAction) ->
-    countDown = args.length
-    new Action (cb) ->
-        replica = for a in args then do (arg = a) ->
-            (cont) ->
-                new Action (_cb) ->
-                    if cont then (mondicAction arg)._go (data) ->
-                        countDown--
-                        if data not instanceof Error
-                            cb data
-                            cb = doNothing
-                            _cb false
-                        else
-                            _cb true
-                            if countDown-- == 0
-                                cb new Error 'Try limit reached'
-                    else _cb false
+Action.sequenceTry = (args, monadicAction) ->
+    length = args.length
+    countUp = 0
+    a = (arg) ->
+        monadicAction(arg).guard (e) ->
+            if countUp++ < length
+                a(args[countUp])
+            else
+                new Error 'Try limit reached'
+    if length > 0
+        a(args[0])
+    else new Action (cb) -> cb new Error 'No argmuents for monadic'
 
-        Action.sequence(replica)(true).go()
+Action.mkNodeAction = (nodeAPI, arg) ->
+    new Action (cb) ->
+        nodeAPI arg, (err, data) ->
+            cb if err then err else data
 
 module.exports = Action
