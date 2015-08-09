@@ -36,7 +36,7 @@ exampleAction.go console.log
 
 Difference from a promise
 ------------
-Action has different semantics, inside it's not a state machine, but a function reference waiting for next continuation, so you can build and an Actions chain, the chain can be fired many times, rather than resolved once and waiting for consume, sometimes it's more suitable than a promise, and it's very easy if you want to memorize an Action's resolved value.
+Action has different semantics, inside it's not a state machine, but a function reference waiting for next continuation, so you can easily build an Action chain, the chain can be fired many times, rather than resolved once and waiting for consume, sometimes it's more suitable than a promise, and it's very easy if you want to memorize an Action's resolved value.
 
 Another difference is that if you want to pass errors to downstream, you simply return them inside your continuation, following continuations won't run until the error reach a guard.
 
