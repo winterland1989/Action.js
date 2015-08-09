@@ -111,7 +111,7 @@ exampleAction
 
 You can put guard between continuations, so that it can handle errors upstream and produce meaningful data to downstream, you can produce an Action inside guard too.
 
-The guard pattern works great on node APIs, becasue they often dont throw error, but have an err flag, so you dont have to write try-catch, there's also a helper to make an Action from node style APIs.
+The guard pattern works great on node APIs, becasue they often don't throw error, but have an err flag, so you don't have to write try-catch, there's also a helper to make an Action from node style APIs.
 
 ```coffee
 {mkNodeAction} = Action
@@ -162,7 +162,7 @@ exampleAction
         ...
     else
         ...
-# note, go may dont need a argument, following is ok:
+# note, go may don't need a argument, following is ok:
 exampleAction
 .go()
 
@@ -206,7 +206,7 @@ Action.any = (actions) ->
                 cb = ignore
 ```
 
-Action.anySuccess is similar to Action.any, but we dont stop when the Actions finished with an Error, we continue to look for the first successful action, if all Actions failed, Action.anySuccess pass an Error 'All actions failed' to following continuations.
+Action.anySuccess is similar to Action.any, but we don't stop when the Actions finished with an Error, we continue to look for the first successful action, if all Actions failed, Action.anySuccess pass an Error 'All actions failed' to following continuations.
 
     Action.anySuccess :: ([Action]) -> Action
 
@@ -260,19 +260,35 @@ Action.allSuccess = (actions) ->
 
 Action.retry take a number as retry limit, and an Action to retry, it's simple, but one thing to note: the number is retry limit, not the total try number, so if you pass 1, the action will retry once after first fail, that's totally two times. you can pass -1 to try forever util an action successfully finish.
 
-    Action.retry :: (Int, Action) -> Action
+    Action.retry :: (times::Int, Action) -> Action
 
 ```coffee
 Action.retry = (times, action) ->
     a = action.guard (e) ->
-        if times-- > 0
-            a
-        else
-            new Error 'Retry limit reached'
+        if times-- != 0 then a
+        else new Error 'Retry limit reached'
     a
 ```
 
-Sometimes, you want to try different input sequential not parallel, you can use Action.sequenceTry, it will pass different input to monadicAction to produce the action to try, and try them sequential, same as Action.trySuccess, sequenceTry will try to find the first successful action, if all try failed, a 'Try limit reached' error will be passed on:
+Action.gapRetry will take an extra parameter as interval(in ms) between two retrys, like Action.retry, retry action will pass error 'Retry limit reached' if no action finished successfully:
+
+    Action.retry :: (times::Int, interval::Int, Action) -> Action
+
+```coffee
+Action.gapRetry = (times, interval, action) ->
+    a = action.guard (e) ->
+        new Action (cb) ->
+            setTimeout(
+                -> cb()
+                interval
+            )
+        .next ->
+            if times-- != 0 then a
+            else new Error 'Retry limit reached'
+    a
+```
+
+Sometimes, you want to try different input sequential not parallel, you can use Action.sequenceTry, it will pass different input to monadicAction to produce the action to try, and try them in order, like Action.trySuccess, sequenceTry will try to find the first successful action, if all try failed, a 'Try limit reached' error will be passed on:
 
     Action.sequenceTry :: ([inputs], monadicAction) -> Action
 

@@ -203,6 +203,67 @@ testAction
 
 .next ->
     new Action (cb) ->
+
+        console.log "retry forever"
+        testRetry = Action.retry(-1, randomAction)
+        testRetry
+        .next (data) ->
+            assertData data, 'good'
+        .guard (e) ->
+            assertData e.message, 'Retry limit reached'
+        .go ->
+            console.log 'Action.retry ok'
+            cb()
+
+.next ->
+    new Action (cb) ->
+        console.log(
+            """
+            random action game,
+            this game will pass 'good' if seed > 0.9, pass error 'bad' if not
+            retry 3 times
+            """
+        )
+        testGapRetry = Action.gapRetry(3, 1000, randomAction)
+        testGapRetry
+        .next (data) ->
+            assertData data, 'good'
+        .guard (e) ->
+            assertData e.message, 'Retry limit reached'
+        .go ->
+            console.log 'Action.gapRetry ok'
+            cb()
+
+.next ->
+    new Action (cb) ->
+
+        console.log "retry 10 times"
+        testGapRetry = Action.gapRetry(10, 1000, randomAction)
+        testGapRetry
+        .next (data) ->
+            assertData data, 'good'
+        .guard (e) ->
+            assertData e.message, 'Retry limit reached'
+        .go ->
+            console.log 'Action.gapRetry ok'
+            cb()
+
+.next ->
+    new Action (cb) ->
+
+        console.log "retry forever"
+        testGapRetry = Action.gapRetry(-1, 1000, randomAction)
+        testGapRetry
+        .next (data) ->
+            assertData data, 'good'
+        .guard (e) ->
+            assertData e.message, 'Retry limit reached'
+        .go ->
+            console.log 'Action.gapRetry ok'
+            cb()
+
+.next ->
+    new Action (cb) ->
         testAll = Action.all [monadicActionFoo('data1'), monadicActionBar('data2')]
         testAll
         .next (datas) ->

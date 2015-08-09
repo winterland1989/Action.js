@@ -74,10 +74,20 @@ Action.anySuccess = (actions) ->
 
 Action.retry = (times, action) ->
     a = action.guard (e) ->
-        if times-- > 0
-            a
-        else
-            new Error 'Retry limit reached'
+        if times-- != 0 then a
+        else new Error 'Retry limit reached'
+    a
+
+Action.gapRetry = (times, interval, action) ->
+    a = action.guard (e) ->
+        new Action (cb) ->
+            setTimeout(
+                -> cb()
+                interval
+            )
+        .next ->
+            if times-- != 0 then a
+            else new Error 'Retry limit reached'
     a
 
 Action.all = (actions) ->
