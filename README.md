@@ -146,11 +146,11 @@ but this's boring, more importantly, it hurts the performance if you are not car
 .next ...
 ```
 
-It's a design choice that Action.js don't catch errors by default, it will make you pure code faster, and make your errors explicitly, use safe instead of safeRaw is also highly recommended, MAKE YOUR ERRORS MORE MEANINGFUL!
+It's a design choice that Action.js don't catch errors by default, it will make you pure code faster, and make your errors explicit, use safe instead of safeRaw is also highly recommended, MAKE YOUR ERRORS MORE MEANINGFUL!
 
-The price is we can't catch you error instead of yourself and provide long-stack-trace, hopefully this design choice can help you write better error handling code rather than bite you.
+The price is we can't catch your error instead of yourself and provide long-stack-trace, hopefully this design choice can help you write better error handling code rather than bite you.
 
-Notice that if you don't guard errors before go, and error happened, then go will throw it, this behavior may useful or not, there's another function to fire a action but also can capture error:
+Notice that if you don't guard errors before go, and error happened, then go will throw it, this behavior may make sense or not, there's another function to fire a action but also can capture error, it's sort of:
 
     Action.prototype._go :: ( cb :: (Error | data) -> a ) -> b
 
@@ -179,7 +179,7 @@ Above is all the core stuff of Action.js, following are helpers to make your lif
 
 A monadicAction is simply a function that produce an Action, don't bother why it's called monadic if you don't want to know. it's just a type of function.
 
-Action.sequence combine an array of monadicActions, and produce a new monadicAction, once this monadicAction get the init data, it will run the all the monadicActions in the array sequential, the data produce by first monadicAction will be passed to the second, and so on util all monadicAction are fired.
+Action.sequence combine an array of monadicActions, and produce a new monadicAction, once this monadicAction get the init data, it will run the all the monadicActions in the array sequential, the data produce by fire first monadicAction will be passed to the second, and so on util all monadicAction are fired.
 
     Action.sequence :: ([monadicAction]) -> monadicAction
 
@@ -290,3 +290,4 @@ Action.sequenceTry = (args, monadicAction) ->
         a(args[0])
     else new Action (cb) -> cb new Error 'No argmuents for monadic'
 ```
+That's all, if you think some other interesting combinators should be here, or find a bug, pull requests are welcome. 
