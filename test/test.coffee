@@ -21,6 +21,17 @@ monadicActionFail = (data) ->
     new Action (cb) ->
         setTimeout ( -> cb new Error 'testError'), 150
 
+randomAction = new Action (cb) ->
+    setTimeout(
+        ->
+            res = Math.random()
+            console.log 'random action game seeding: ', res
+            if res > 0.9
+                cb 'good'
+            else cb new Error 'bad'
+        50
+    )
+
 testAction = new Action (cb) -> cb()
 testAction
 .next ->
@@ -77,8 +88,8 @@ testAction
 .next ->
     new Action (cb) ->
 
-        testAny = Action.any [monadicActionFoo, monadicActionBar]
-        testAny(['data1', 'data2'])
+        testAny = Action.any [monadicActionFoo('data1'), monadicActionBar('data2')]
+        testAny
         .next (data) ->
             assertData data, 'data1foo'
         .go ->
@@ -88,8 +99,8 @@ testAction
 .next ->
     new Action (cb) ->
 
-        testAnyWhenError = Action.any [monadicActionBar, monadicActionFail]
-        testAnyWhenError(['data1', 'data2'])
+        testAnyWhenError = Action.any [monadicActionBar('data1'), monadicActionFail('data2')]
+        testAnyWhenError
         .next (data) ->
             assertData data, 'this wont fire'
         .guard (e) ->
@@ -101,8 +112,8 @@ testAction
 .next ->
     new Action (cb) ->
 
-        testAnySuccess = Action.anySuccess [monadicActionFoo, monadicActionBar]
-        testAnySuccess(['data1', 'data2'])
+        testAnySuccess = Action.anySuccess [monadicActionFoo('data1'), monadicActionBar('data2')]
+        testAnySuccess
         .next (data) ->
             assertData data, 'data1foo'
         .go ->
@@ -112,8 +123,8 @@ testAction
 .next ->
     new Action (cb) ->
 
-        testAnySuccessWhenError1 = Action.anySuccess [monadicActionFoo, monadicActionFail]
-        testAnySuccessWhenError1(['data1', 'data2'])
+        testAnySuccessWhenError1 = Action.anySuccess [monadicActionFoo('data1'), monadicActionFail('data2')]
+        testAnySuccessWhenError1
         .next (data) ->
             assertData data, 'data1foo'
         .go ->
@@ -123,8 +134,8 @@ testAction
 .next ->
     new Action (cb) ->
 
-        testAnySuccessWhenError2 = Action.anySuccess [monadicActionBar, monadicActionFail]
-        testAnySuccessWhenError2(['data1', 'data2'])
+        testAnySuccessWhenError2 = Action.anySuccess [monadicActionBar('data1'), monadicActionFail('data2')]
+        testAnySuccessWhenError2
         .next (data) ->
             assertData data, 'data1bar'
         .go ->
@@ -134,8 +145,8 @@ testAction
 .next ->
     new Action (cb) ->
 
-        testAnySuccessWhenALLError = Action.anySuccess [monadicActionFail, monadicActionFail]
-        testAnySuccessWhenALLError(['data1', 'data2'])
+        testAnySuccessWhenALLError = Action.anySuccess [monadicActionFail('data1'), monadicActionFail('data2')]
+        testAnySuccessWhenALLError
         .next (data) ->
             assertData data, 'this wont fire'
         .guard (e) ->
@@ -146,6 +157,135 @@ testAction
 
 .next ->
     new Action (cb) ->
+
+        testRetryAllError = Action.retry(3, monadicActionFail('data2'))
+        testRetryAllError
+        .next (data) ->
+            assertData data, 'this wont fire'
+        .guard (e) ->
+            assertData e.message, 'Retry limit reached'
+        .go ->
+            console.log 'Action.retry with all Error ok'
+            cb()
+
+.next ->
+    new Action (cb) ->
+        console.log(
+            """
+            random action game,
+            this game will pass 'good' if seed > 0.9, pass error 'bad' if not
+            retry 3 times
+            """
+        )
+        testRetry = Action.retry(3, randomAction)
+        testRetry
+        .next (data) ->
+            assertData data, 'good'
+        .guard (e) ->
+            assertData e.message, 'Retry limit reached'
+        .go ->
+            console.log 'Action.retry ok'
+            cb()
+
+.next ->
+    new Action (cb) ->
+
+        console.log "retry 10 times"
+        testRetry = Action.retry(10, randomAction)
+        testRetry
+        .next (data) ->
+            assertData data, 'good'
+        .guard (e) ->
+            assertData e.message, 'Retry limit reached'
+        .go ->
+            console.log 'Action.retry ok'
+            cb()
+
+.next ->
+    new Action (cb) ->
+        testAll = Action.all [monadicActionFoo('data1'), monadicActionBar('data2')]
+        testAll
+        .next (datas) ->
+            assertData datas[0], 'data1foo'
+            assertData datas[1], 'data2bar'
+        .go ->
+            console.log 'Action.all without error ok'
+            cb()
+
+.next ->
+    new Action (cb) ->
+        testAllWithError = Action.all [monadicActionFoo('data1'), monadicActionFail('data2')]
+        testAllWithError
+        .next (datas) ->
+            assertData datas[0], 'this wont fire'
+        .guard (e) ->
+            assertData e.message, 'testError'
+        .go ->
+            console.log 'Action.all with error ok'
+            cb()
+
+.next ->
+    new Action (cb) ->
+        testAllSuccess = Action.allSuccess [monadicActionFoo('data1'), monadicActionBar('data2')]
+        testAllSuccess
+        .next (datas) ->
+            assertData datas[0], 'data1foo'
+            assertData datas[1], 'data2bar'
+        .go ->
+            console.log 'Action.allSuccess without error ok'
+            cb()
+
+.next ->
+    new Action (cb) ->
+        testAllSuccessWithError = Action.allSuccess [monadicActionFoo('data1'), monadicActionFail('data2')]
+        testAllSuccessWithError
+        .next (datas) ->
+            assertData datas[0], 'data1foo'
+            assertData datas[1].message, 'testError'
+        .go ->
+            console.log 'Action.allSuccess with error ok'
+            cb()
+
+.next ->
+    new Action (cb) ->
+        testMultiTry = Action.multiTry ['data1', 'data2'], monadicActionFoo
+        testMultiTry
+        .next (data) ->
+            assertData data, 'data1foo'
+        .go ->
+            console.log 'Action.multiTry without error ok'
+            cb()
+
+.next ->
+    monadicActionBigger = (threshold) -> new Action (cb) ->
+        setTimeout(
+            ->
+                if threshold > 0.9
+                    cb 'good: ' + threshold
+                else cb new Error 'bad'
+            50
+        )
+    new Action (cb) ->
+        testMultiTryWithError = Action.multiTry [0.13, 0.43, 0.91, 0.14], monadicActionBigger
+        testMultiTryWithError
+        .next (data) ->
+            assertData data, 'good: 0.91'
+        .go ->
+            console.log 'Action.multiTry with error ok'
+            cb()
+
+.next ->
+
+    new Action (cb) ->
+        testMultiTryWithAllError = Action.multiTry ['', '', ''], monadicActionFail
+        testMultiTryWithAllError
+        .next (data) ->
+            assertData data, 'this wont fire'
+        .guard (e) ->
+            assertData e.message, 'Try limit reached'
+        .go ->
+            console.log 'Action.multiTry with all error ok'
+            cb()
 
 
 .go -> console.log 'test all passed'
