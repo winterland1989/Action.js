@@ -49,7 +49,7 @@ Action.sequence = (monadicActions) -> (init) ->
         for monadicAction in monadicActions[1..]
             a = a.next monadicAction
         a
-    else throw new Error 'No monadic actions given'
+    else new Action (cb) -> cb new Error 'No monadic actions given'
 
 
 Action.any = (actions) ->

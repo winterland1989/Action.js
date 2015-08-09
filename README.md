@@ -190,7 +190,7 @@ Action.sequence = (monadicActions) -> (init) ->
         for monadicAction in monadicActions[1..]
             a = a.next monadicAction
         a
-    else throw new Error 'No monadic actions given'
+    else new Action (cb) -> cb new Error 'No monadic actions given'
 ```
 
 Action.any combine an array of Actions and return a new Action finalA, first we fire all of the Actions, as soon as one of the Actions finished, finalA starts to call its continuation. and rest of the Actions are ignored.
