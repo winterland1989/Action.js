@@ -132,7 +132,7 @@ exampleAction
     catch e then e
 ```
 
-but this's boring, more importantly, it hurts the performance if you are not careful enough, because v8 doesn't optimize functions contain try-catch, so we use a combinator to get around it(minimize the function contain try-catch), and for sure, it's more shorter!
+but this's boring, more importantly, it hurts the performance if you are not careful enough, because v8 doesn't optimize functions contain try-catch, so we use a combinator to get around it(minimize the function contain try-catch), and for sure, it's shorter!
 
 ```coffee
 {safe, safeRaw} = Action
