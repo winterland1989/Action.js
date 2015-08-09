@@ -146,7 +146,7 @@ but this's boring, more importantly, it hurts the performance if you are not car
 .next ...
 ```
 
-It's a design choice that Action.js dont catch errors by default, it will make you pure code faster, and make your errors explicitly, use safe instead of safeRaw is also highly recommended, MAKE YOUR ERRORS MORE MEANINGFUL!
+It's a design choice that Action.js don't catch errors by default, it will make you pure code faster, and make your errors explicitly, use safe instead of safeRaw is also highly recommended, MAKE YOUR ERRORS MORE MEANINGFUL!
 
 The price is we can't catch you error instead of yourself and provide long-stack-trace, hopefully this design choice can help you write better error handling code rather than bite you.
 
