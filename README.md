@@ -317,4 +317,5 @@ Action.sequenceTry = (args, monadicAction) ->
         a(args[0])
     else Action.wrap new Error 'No argmuents for monadic'
 ```
+
 That's all, if you think some other interesting combinators should be here, or find a bug, pull requests are welcome. 
