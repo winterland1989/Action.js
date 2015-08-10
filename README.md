@@ -11,7 +11,7 @@ Example
 
 exampleAction = new Action (cb) ->
     readFile 'fileA', (err, data) ->
-        if err then err else cb data
+        cb if err then err else data
 .next (data) ->
     processData data
 .next (data) ->
@@ -53,7 +53,7 @@ First you construct an Action like you contruct a Promise, the differences are t
 ```coffee
 exampleAction = new Action (cb) ->
     readFile 'fileA', (err, data) ->
-        cb if err then err else cb data
+        cb if err then err else data
 ```
 
 If you don't have any process going on, you can fire the action and get the data now:
