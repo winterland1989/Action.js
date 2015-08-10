@@ -37,6 +37,9 @@ class Action
                 throw data
             else if cb? then cb data
 
+Action.wrap = (data) ->
+    new Action (cb) -> cb data
+
 Action.safe = (err, fn) -> (data) ->
     try fn(data) catch e then err
 
@@ -49,8 +52,7 @@ Action.sequence = (monadicActions) -> (init) ->
         for monadicAction in monadicActions[1..]
             a = a.next monadicAction
         a
-    else new Action (cb) -> cb new Error 'No monadic actions given'
-
+    else Action.wrap new Error 'No monadic actions given'
 
 Action.any = (actions) ->
     new Action (cb) ->
@@ -124,7 +126,7 @@ Action.sequenceTry = (args, monadicAction) ->
                 new Error 'Try limit reached'
     if length > 0
         a(args[0])
-    else new Action (cb) -> cb new Error 'No argmuents for monadic'
+    else Action.wrap new Error 'No argmuents for monadic'
 
 Action.mkNodeAction = (nodeAPI, arg) ->
     new Action (cb) ->

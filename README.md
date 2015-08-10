@@ -1,9 +1,11 @@
 Action.js
 =========
+
 A sane way to chain asynchronous actions inspired by cont monad in haskell. offer an alternative to state machine based promise.
 
 Example
 ---------
+
 ```coffee
 {safe} = Action
 
@@ -35,7 +37,8 @@ exampleAction.go console.log
 ```
 
 Difference from a promise
-------------
+-------------------------
+
 Action has different semantics, inside it's not a state machine, but a function reference waiting for next continuation, so you can easily build an Action chain, the chain can be fired many times, rather than resolved once and waiting for consume, sometimes it's more suitable than a promise, and it's very easy if you want to memorize an Action's resolved value.
 
 Another difference is that if you want to pass errors to downstream, you simply return them inside your continuation, following continuations won't run until the error reach a guard.
@@ -173,7 +176,18 @@ exampleAction
 
 Generally, you may want to use \_go in a control structure library, like following helpers.
 
-Above is all the core stuff of Action.js, following are helpers to make your life easier, let's introduce a concept first:
+Above is all the core stuff of Action.js, following are helpers to make your life easier:
+
+Action.wrap wrap a value in an Action, (a.k.a. return in a haskell monad), when this Action fire, the data will be passed on, the data can be an Error, in that case it will skip all nexts and hit first guard.
+
+    Action.wrap :: a -> Action
+
+```coffee
+Action.wrap = (data) ->
+    new Action (cb) -> cb data
+```
+
+Now let's introduce a concept first:
 
     monadicAction :: (data) -> Action
 
@@ -190,7 +204,7 @@ Action.sequence = (monadicActions) -> (init) ->
         for monadicAction in monadicActions[1..]
             a = a.next monadicAction
         a
-    else new Action (cb) -> cb new Error 'No monadic actions given'
+    else Action.wrap new Error 'No monadic actions given'
 ```
 
 Action.any combine an array of Actions and return a new Action finalA, first we fire all of the Actions, as soon as one of the Actions finished, finalA starts to call its continuation. and rest of the Actions are ignored.
@@ -301,6 +315,6 @@ Action.sequenceTry = (args, monadicAction) ->
                 new Error 'Try limit reached'
     if length > 0
         a(args[0])
-    else new Action (cb) -> cb new Error 'No argmuents for monadic'
+    else Action.wrap new Error 'No argmuents for monadic'
 ```
 That's all, if you think some other interesting combinators should be here, or find a bug, pull requests are welcome. 
