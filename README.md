@@ -6,6 +6,49 @@ A sane way to chain asynchronous actions inspired by cont monad in haskell. offe
 Example
 ---------
 
+```js
+var safe = Action.safe;
+
+var exampleAction = new Action(function(cb){
+    readFile('fileA', function(err, data){
+        if (err){
+            cb(err);
+        }else{
+            cb(data);
+        }
+    });
+})
+.next(function(data){
+    return processData(data);
+})
+.next(function(data){
+    return new Action(function(cb){
+        processDataAsync(data, cb);
+    })
+})
+.next(safe(new Error('Something went wrong'), function(data){
+    return someThingMayWentWrong(data);
+}))
+.next(function(data){
+    // This process will be skip if previous step pass a Error
+    return anotherProcess(data);
+})
+.guard(function(e){
+    switch e.message
+        case '...': ...
+        ...
+
+    return 'Error handled'
+});
+
+exampleAction.go(console.log)
+
+...
+// after fileA changed you can go again
+exampleAction.go(console.log)
+
+```
+If you prefer read coffee:
 ```coffee
 {safe} = Action
 
@@ -55,6 +98,17 @@ Document and tutorial
 
 First you construct an Action like you contruct a Promise, the differences are that an Action won't run immediately at next tick, and any errors should be passed to the callback argument, we will talk about errors later:
 
+```js
+var exampleAction = new Action(function(cb){
+    readFile('fileA', function(err, data){
+        if (err){
+            cb(err);
+        }else{
+            cb(data);
+        }
+    });
+});
+```
 ```coffee
 exampleAction = new Action (cb) ->
     readFile 'fileA', (err, data) ->
@@ -63,6 +117,12 @@ exampleAction = new Action (cb) ->
 
 If you don't have any process going on, you can fire the action and get the data now:
 
+```js
+exampleAction
+.go(function(data){
+    console.log(data);
+});
+```
 ```coffee
 exampleAction
 .go (data) ->
@@ -75,6 +135,23 @@ Most of the time you want to process the data, you have to give an Action a cont
 
 e.g. You process data inside continuation, return it, or return a new Action, or return an Error if error occurred. Examples:
 
+```js
+exampleAction
+.next(function(data){
+    return processData(data);
+})
+.next(function(data){
+    return new Action(function(cb){
+        processDataAsync(data, cb);
+    })
+})
+.next(function(data){
+    if(someThingMayWentWrong(data)){
+        return new Error('Something went wrong');
+    }
+})
+...
+```
 ```coffee
 exampleAction
 .next (data) ->
@@ -85,10 +162,21 @@ exampleAction
 .next (data) ->
     if someThingMayWentWrong data
         new Error 'Something went wrong'
+...
 ```
 
 Remember, you can't pass a continuation after you fire an Action. because action.go doesn't produce an Action.
 
+```js
+// this is wrong, and produce an error sort like 'next is undefined'
+exampleAction
+.go(function(data){
+    finish(data);
+})
+.next(function(data){
+    cantGetDataHere(data);
+})
+```
 ```coffee
 # this is wrong, and produce an error sort like 'next is undefined'
 exampleAction
@@ -100,6 +188,11 @@ exampleAction
 
 But you can reuse the origin action if you want to fire it again.
 
+```js
+exampleAction.go(function(data){...});
+// after some time, or inside another request handler, the data maybe different this time!
+exampleAction.go(function(data){...});
+```
 ```coffee
 exampleAction.go (data) -> ...
 # after some time, or inside another request handler, the data maybe different this time!
@@ -108,19 +201,42 @@ exampleAction.go (data) -> ...
 
 Now you have to face errors, don't panic, once a continuation return a Error object, the following continuation won't fire, you can catch the error by putting a guard on the end. Of course guards have to be put before go.
 
+```js
+exampleAction
+.guard(function(e){
+    switch e.message
+        case '...' : ...
+        ...
+})
+.go()
+```
 ```coffee
 exampleAction
-.guard: (e) ->
+.guard (e) ->
     switch e.message
         when '...' ...
         ...
-.go ->
+.go()
 ```
 
 You can put guard between continuations, so that it can handle errors upstream and produce meaningful data to downstream, you can produce an Action inside guard too.
 
 The guard pattern works great on node APIs, becasue they often don't throw error, but have an err flag, so you don't have to write try-catch, there's also a helper to make an Action from node style APIs.
 
+```js
+var mkNodeAction = Action.mkNodeAction;
+exampleAction = mkNodeAction(readFile, 'fileA');
+// this is equivalent to below
+exampleAction = new Action(function(cb){
+    readFile('fileA', function(err, data){
+        if(err){
+            cb(err); 
+        }else{
+            cb(data);
+        }
+    });
+});
+```
 ```coffee
 {mkNodeAction} = Action
 exampleAction = mkNodeAction readFile, 'fileA'
@@ -132,16 +248,40 @@ exampleAction = new Action (cb) ->
 
 But some errors have to be caught explicitly, you can do something like this:
 
+```js
+exampleAction
+.next(function(data){
+    try{
+        someDangerousThing(data);
+    }
+    catch(e){
+        return e;
+    }
+}
+```
 ```coffee
 exampleAction
 .next (data) ->
-    try
-        someDangerousThing data
+    try somedangerousthing data
     catch e then e
 ```
 
 but this's boring, more importantly, it hurts the performance if you are not careful enough, because v8 doesn't optimize functions contain try-catch, so we use a combinator to get around it(minimize the function contain try-catch), and for sure, it's shorter!
 
+```js
+var safe = Action.safe
+var safeRaw = Action.safeRaw
+// this will catch the error during someThingMayWentWrong and return it
+.next(safeRaw(function(data){
+    someThingMayWentWrong(data);
+}))
+.next ...
+// this will return a customized error when error happened.
+.next(safe(new Error('Fire missile failed'), function(data){
+    FireMissle(data);
+}))
+.next ...
+```
 ```coffee
 {safe, safeRaw} = Action
 # this will catch the error during someThingMayWentWrong and return it
@@ -162,6 +302,25 @@ Notice that if you don't guard errors before go, and error happened, then go wil
 
     Action.prototype._go :: ( cb :: (Error | data) -> a ) -> b
 
+```js
+// use _go if you want to capture the error
+exampleAction
+._go(function(data){
+    if(data instanceof Error){
+        ...
+    }
+    else{
+        ...
+    }
+});
+// note, go may don't need a argument, following is ok:
+exampleAction
+.go()
+
+// but _go must have one, following will produce a error:
+exampleAction
+._go()
+```
 ```coffee
 # use _go if you want to capture the error
 exampleAction
@@ -181,7 +340,7 @@ exampleAction
 
 Generally, you may want to use \_go in a control structure library, like following helpers.
 
-Above is all the core stuff of Action.js, following are helpers to make your life easier:
+Above is all the core stuff of Action.js, following are helpers to make your life easier (js/coffee document is W.I.P, here is source for amuse):
 
 Action.wrap wrap a value in an Action, (a.k.a. return in a haskell monad), when this Action fire, the data will be passed on, the data can be an Error, in that case it will skip all nexts and hit first guard.
 
