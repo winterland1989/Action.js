@@ -11,7 +11,7 @@ Example
 
 exampleAction = new Action (cb) ->
     readFile 'fileA', (err, data) ->
-        if err then err else cb data
+        cb if err then err else data
 .next (data) ->
     processData data
 .next (data) ->
@@ -53,12 +53,12 @@ It's simple and stable, just grab from git and use, dist/Action.js is intend to 
 Document and tutorial
 ---------------------
 
-First you construct an Action like you contruct a Promise, the differences are that an Action won't run immediately at next tick, and any errors should be return, we will talk about errors later:
+First you construct an Action like you contruct a Promise, the differences are that an Action won't run immediately at next tick, and any errors should be passed to the callback argument, we will talk about errors later:
 
 ```coffee
 exampleAction = new Action (cb) ->
     readFile 'fileA', (err, data) ->
-        cb if err then err else cb data
+        cb if err then err else data
 ```
 
 If you don't have any process going on, you can fire the action and get the data now:
