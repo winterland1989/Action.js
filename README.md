@@ -48,7 +48,7 @@ Check out the Document, it's really simple, and check the soure code if you feel
 Document and tutorial
 ---------------------
 
-First you construct an Action like you contruct a Promise, the differences are that an Action won't run immediately at next tick, and any errors should be return, we will talk about errors later:
+First you construct an Action like you contruct a Promise, the differences are that an Action won't run immediately at next tick, and any errors should be passed to the callback argument, we will talk about errors later:
 
 ```coffee
 exampleAction = new Action (cb) ->
