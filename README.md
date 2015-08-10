@@ -45,6 +45,11 @@ Another difference is that if you want to pass errors to downstream, you simply 
 
 Check out the Document, it's really simple, and check the soure code if you feel interesting, it's less than 150 lines.
 
+Usage
+-----
+
+It's simple and stable, just grab from git and use, dist/Action.js is intend to be used as a common js module, and dist/Action.min.js is used in browser(window.Action namespace will be used).
+
 Document and tutorial
 ---------------------
 
