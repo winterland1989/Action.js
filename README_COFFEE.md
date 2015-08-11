@@ -1,51 +1,38 @@
 Action.js
 =========
 
-A sane way to chain asynchronous actions inspired by cont monad in haskell. offer an alternative to state machine based promise. If you prefer read coffee, click [here](https://github.com/winterland1989/Action.js/blob/master/README_COFFEE.md)
+A sane way to chain asynchronous actions inspired by cont monad in haskell. offer an alternative to state machine based promise.
 
 Example
 -------
 
-```js
-var safe = Action.safe;
+```coffee
+{safe} = Action
 
-var exampleAction = new Action(function(cb){
-    readFile('fileA', function(err, data){
-        if (err){
-            cb(err);
-        }else{
-            cb(data);
-        }
-    });
-})
-.next(function(data){
-    return processData(data);
-})
-.next(function(data){
-    return new Action(function(cb){
-        processDataAsync(data, cb);
-    })
-})
-.next(safe(new Error('Something went wrong'), function(data){
-    return someThingMayWentWrong(data);
-}))
-.next(function(data){
-    // This process will be skip if previous step pass a Error
-    return anotherProcess(data);
-})
-.guard(function(e){
+exampleAction = new Action (cb) ->
+    readFile 'fileA', (err, data) ->
+        cb if err then err else data
+.next (data) ->
+    processData data
+.next (data) ->
+    new Action (cb) ->
+        processDataAsync data, cb
+.next safe (new Error 'Something went wrong'), (data) ->
+    someThingMayWentWrong data
+.next (data) ->
+    # This process will be skip if previous step pass a Error
+    anotherProcess data
+.guard (e) ->
     switch e.message
-        case '...': ...
+        when '...' then ...
         ...
+    'Error handled'
 
-    return 'Error handled'
-});
-
-exampleAction.go(console.log)
+exampleAction.go console.log
 
 ...
-// after fileA changed you can go again
-exampleAction.go(console.log)
+# after fileA changed you can go again
+exampleAction.go console.log
 
 ```
 
@@ -56,7 +43,7 @@ Action has different semantics, inside it's not a state machine, but a function 
 
 Another difference is that if you want to pass errors to downstream, you simply return them inside your continuation, following continuations won't run until the error reach a guard.
 
-Check out the Document, it's really simple, and check the soure code if you feel interesting, it's less than 150 lines.
+Check out the Document, it's really simple, and check the soure code if you feel interesting, it's less than 200 lines.
 
 Usage
 -----
@@ -68,25 +55,18 @@ Document and tutorial
 
 First you construct an Action like you contruct a Promise, the differences are that an Action won't run immediately at next tick, and any errors should be passed to the callback argument, we will talk about errors later:
 
-```js
-var exampleAction = new Action(function(cb){
-    readFile('fileA', function(err, data){
-        if (err){
-            cb(err);
-        }else{
-            cb(data);
-        }
-    });
-});
+```coffee
+exampleAction = new Action (cb) ->
+    readFile 'fileA', (err, data) ->
+        cb if err then err else data
 ```
 
 If you don't have any process going on, you can fire the action and get the data now:
 
-```js
+```coffee
 exampleAction
-.go(function(data){
-    console.log(data);
-});
+.go (data) ->
+    console.log data
 ```
 
 Most of the time you want to process the data, you have to give an Action a continuation to do the next, a continuation is something like this:
@@ -95,82 +75,66 @@ Most of the time you want to process the data, you have to give an Action a cont
 
 e.g. You process data inside continuation, return it, or return a new Action, or return an Error if error occurred. Examples:
 
-```js
+```coffee
 exampleAction
-.next(function(data){
-    return processData(data);
-})
-.next(function(data){
-    return new Action(function(cb){
-        processDataAsync(data, cb);
-    })
-})
-.next(function(data){
-    if(someThingMayWentWrong(data)){
-        return new Error('Something went wrong');
-    }
-})
+.next (data) ->
+    processData data
+.next (data) ->
+    new Action (cb) ->
+        processDataAsync data, cb
+.next (data) ->
+    if someThingMayWentWrong data
+        new Error 'Something went wrong'
 ...
 ```
 
 Remember, you can't pass a continuation after you fire an Action. because action.go doesn't produce an Action.
 
-```js
-// this is wrong, and produce an error sort like 'next is undefined'
+```coffee
+# this is wrong, and produce an error sort like 'next is undefined'
 exampleAction
-.go(function(data){
-    finish(data);
-})
-.next(function(data){
-    cantGetDataHere(data);
-})
+.go (data) ->
+    finish data
+.next (data) ->
+    cantGetDataHere data
 ```
 
 But you can reuse the origin action if you want to fire it again.
 
-```js
-exampleAction.go(function(data){...});
-// after some time, or inside another request handler, the data maybe different this time!
-exampleAction.go(function(data){...});
+```coffee
+exampleAction.go (data) -> ...
+# after some time, or inside another request handler, the data maybe different this time!
+exampleAction.go (data) -> ...
 ```
 
 There's a combinator that fire an Action actionA immediately and return a Action actionB, it's Action.freeze, during the pending stage all the continuation are saved, after actionA are resolved with valueA, pass continuation to actionB will resolved with valueA, you may find actionB is just a Promise in disguse, it's a memorized ActionA, resolved only once.
 
-```js
-// FileA will be read immediately, processA will pending
-freezedFileA = Action.freeze(new Action(function(cb){
-    readFile('FileA', function(err, data){
-        if(err){
-            cb(err);
-        }else{
-            cb(data);
-        }
-    });
-})
+```coffee
+# FileA will be read immediately, processA will pending
+freezedFileA = Action.freeze new Action (cb) ->
+    readFile 'FileA', (err, data) ->
+        cb if err then err else data
+
 freezedFileA
-.next(function(data){
+.next (data) ->
     processA(data)
-})
 .go()
 
-// after some time, freezedFileA will resolve immediately with the just the same data when freezing.
+# after some time, freezedFileA will resolve immediately with the just the same data when freezing.
 freezedFileA
-.next(function(data){
+.next (data) ->
     processB(data)
-})
 .go()
-
 ```
 
 If Action resulted in error, Action.freeze will throw it, be sure to put a guard before it! Let's talk about errors, don't panic, once a continuation return a Error object, the following continuation won't fire, you can catch the error by putting a guard on the end. Of course guards have to be put before go.
 
-```js
+```coffee
 exampleAction
-.guard(function(e){
+.guard (e) ->
     switch e.message
-        case '...' : ...
+        when '...' ...
         ...
-})
 .go()
 ```
 
@@ -178,49 +142,35 @@ You can put guard between continuations, so that it can handle errors upstream a
 
 The guard pattern works great on node APIs, becasue they often don't throw error, but have an err flag, so you don't have to write try-catch, there's also a helper to make an Action from node style APIs.
 
-```js
-var mkNodeAction = Action.mkNodeAction;
-exampleAction = mkNodeAction(readFile, 'fileA');
-// this is equivalent to below
-exampleAction = new Action(function(cb){
-    readFile('fileA', function(err, data){
-        if(err){
-            cb(err); 
-        }else{
-            cb(data);
-        }
-    });
-});
+```coffee
+{mkNodeAction} = Action
+exampleAction = mkNodeAction readFile, 'fileA'
+# this is equivalent to below
+exampleAction = new Action (cb) ->
+    readFile 'fileA', (err, data) ->
+        cb if err then err else data
 ```
 
 But some errors have to be caught explicitly, you can do something like this:
 
-```js
+```coffee
 exampleAction
-.next(function(data){
-    try{
-        someDangerousThing(data);
-    }
-    catch(e){
-        return e;
-    }
-}
+.next (data) ->
+    try somedangerousthing data
+    catch e then e
 ```
 
 but this's boring, more importantly, it hurts the performance if you are not careful enough, because v8 doesn't optimize functions contain try-catch, so we use a combinator to get around it(minimize the function contain try-catch), and for sure, it's shorter!
 
-```js
-var safe = Action.safe
-var safeRaw = Action.safeRaw
-// this will catch the error during someThingMayWentWrong and return it
-.next(safeRaw(function(data){
-    someThingMayWentWrong(data);
-}))
+```coffee
+{safe, safeRaw} = Action
+# this will catch the error during someThingMayWentWrong and return it
+.next safeRaw (data) ->
+    someThingMayWentWrong data
 .next ...
-// this will return a customized error when error happened.
-.next(safe(new Error('Fire missile failed'), function(data){
-    FireMissle(data);
-}))
+# this will return a customized error when error happened.
+.next safe (new Error 'Fire missile failed'), (data) ->
+    FireMissle data
 .next ...
 ```
 
@@ -232,27 +182,24 @@ Notice that if you don't guard errors before go, and error happened, then go wil
 
     Action.prototype._go :: ( cb :: (Error | data) -> a ) -> b
 
-```js
-// use _go if you want to capture the error
+```coffee
+# use _go if you want to capture the error
 exampleAction
-._go(function(data){
-    if(data instanceof Error){
+._go (data) ->
+    if data instanceof Error
         ...
-    }
-    else{
+    else
         ...
-    }
-});
-// note, go may don't need a argument, following is ok:
+# note, go may don't need a argument, following is ok:
 exampleAction
 .go()
 
-// but _go must have one, following will produce a error:
+# but _go must have one, following will produce a error:
 exampleAction
 ._go()
 ```
 
-Generally, you may want to use \_go in a control structure library, just like following helpers, there's also Action.\_freeze, which just like \_go, it will not throw error when freezing Action failed, it silently passed the error to downstream.
+Generally, you may want to use \_go in a control structure library, just like following helpers, there's also Action.\_freeze, which just like \_go, it will not throw error when freezing failed, it silently passed the error to downstream.
 
 Above is all the core stuff of Action.js, following are helpers to make your life easier (js/coffee document is W.I.P, here is source for amuse):
 
