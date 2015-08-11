@@ -107,7 +107,7 @@ exampleAction.go (data) -> ...
 exampleAction.go (data) -> ...
 ```
 
-There's a combinator that fire an Action actionA immediately and return a Action actionB, it's Action.freeze, during the pending stage all the continuation are saved, after actionA are resolved with valueA, pass continuation to actionB will resolved with valueA, you may find actionB is just a Promise in disguse, it's a memorized ActionA, resolved only once.
+There's a combinator that fire an Action actionA immediately and return a Action actionB, it's Action.freeze, during the pending stage all the continuation are saved, after actionA are resolved with valueA, pass continuation to actionB will resolved with valueA, you may find actionB is just a Promise in disguse, it's a memorized actionA, resolved only once.
 
 ```coffee
 # FileA will be read immediately, processA will pending

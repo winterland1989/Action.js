@@ -41,11 +41,11 @@ var exampleAction = new Action(function(cb){
     return 'Error handled'
 });
 
-exampleAction.go(console.log)
+exampleAction.go(console.log);
 
 ...
 // after fileA changed you can go again
-exampleAction.go(console.log)
+exampleAction.go(console.log);
 
 ```
 
@@ -134,7 +134,7 @@ exampleAction.go(function(data){...});
 exampleAction.go(function(data){...});
 ```
 
-There's a combinator that fire an Action actionA immediately and return a Action actionB, it's Action.freeze, during the pending stage all the continuation are saved, after actionA are resolved with valueA, pass continuation to actionB will resolved with valueA, you may find actionB is just a Promise in disguse, it's a memorized ActionA, resolved only once.
+There's a combinator that fire an Action actionA immediately and return a Action actionB, it's Action.freeze, during the pending stage all the continuation are saved, after actionA are resolved with valueA, pass continuation to actionB will resolved with valueA, you may find actionB is just a Promise in disguse, it's a memorized actionA, resolved only once.
 
 ```js
 // FileA will be read immediately, processA will pending
