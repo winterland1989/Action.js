@@ -49,6 +49,7 @@ mkFreeze = (throwError) -> (action) ->
             data = _data
             pending = false
             for cb in callbacks then cb _data
+            cb = []
     if throwError then action.go cb else action._go cb
     new Action (cb) ->
         if pending then callbacks.push cb
