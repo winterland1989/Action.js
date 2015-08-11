@@ -9,11 +9,11 @@ new Action (cb) ->
             resolve acc + 1
 
     p = mkPromise(0)
-    for i in [0..1000]
+    for i in [0..100000]
         p = p.then mkPromise
 
     p.then (acc) ->
-        console.log acc, ' should be 1002, use time: ', Date.now() - start
+        console.log acc, ' should be 100002, use time: ', Date.now() - start
         cb()
 
 .next ->
@@ -26,11 +26,13 @@ new Action (cb) ->
                 cb acc + 1
 
         a = monadicAction(0)
-        for i in [0..1000]
+        for i in [0..100000]
             a = a.next monadicAction
+            if i % 1000 == 0
+                a = Action.freeze a
 
         a.go (acc) ->
-            console.log acc, ' should be 1002, use time: ', Date.now() - start
+            console.log acc, ' should be 100002, use time: ', Date.now() - start
         cb()
 
 .next ->

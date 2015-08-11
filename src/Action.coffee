@@ -40,23 +40,19 @@ class Action
 Action.wrap = (data) ->
     new Action (cb) -> cb data
 
-mkFreeze = (throwError) -> (action) ->
+Action.freeze = (action) ->
     pending = true
     data = undefined
     callbacks = []
-    cb = (_data) ->
+    action._go (_data) ->
         if pending
             data = _data
             pending = false
             for cb in callbacks then cb _data
             cb = []
-    if throwError then action.go cb else action._go cb
     new Action (cb) ->
         if pending then callbacks.push cb
         else cb data
-
-Action.freeze = mkFreeze true
-Action._freeze = mkFreeze false
 
 Action.safe = (err, fn) -> (data) ->
     try fn(data) catch e then err
@@ -92,15 +88,20 @@ Action.anySuccess = (actions) ->
                 else if countDown == 0
                     cb new Error 'All actions failed'
 
-Action.replicate = (times, a) ->
-    res = []
-    while times-- != 0
-        res.push a
-    res
-
 Action.repeat = (times, action) ->
-    monadicA = -> action
-    (Action.sequence Action.replicate(times, monadicA))()
+    a = action.next (data) ->
+        if times-- != 0 then a
+        else data
+    a
+
+Action.gapRepeat = (times, interval, action) ->
+    a = action.next (data) ->
+        new Action (cb) ->
+            setTimeout cb, interval
+        .next ->
+            if times-- != 0 then a
+            else data
+    a
 
 Action.retry = (times, action) ->
     a = action.guard (e) ->

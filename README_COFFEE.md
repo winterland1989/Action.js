@@ -43,7 +43,7 @@ Action has different semantics, inside it's not a state machine, but a function 
 
 Another difference is that if you want to pass errors to downstream, you simply return them inside your continuation, following continuations won't run until the error reach a guard.
 
-Check out the Document, it's really simple, and check the soure code if you feel interesting, it's less than 200 lines.
+Check out the Document, it's really simple, and check the soure code if you feel interesting, it's less than 200 lines. Benchmark also show it has much smaller overhead than a Promise (see test/bench).
 
 Usage
 -----
@@ -107,7 +107,10 @@ exampleAction.go (data) -> ...
 exampleAction.go (data) -> ...
 ```
 
-There's a combinator that fire an Action actionA immediately and return a Action actionB, it's Action.freeze, during the pending stage all the continuation are saved, after actionA are resolved with valueA, pass continuation to actionB will resolved with valueA, you may find actionB is just a Promise in disguise, it's a memorized actionA, resolved only once.
+There's a combinator that fire an Action actionA immediately and return an Action actionB, it's Action.freeze, during the pending stage all the continuation are saved, after actionA are resolved with valueA, pass continuation to actionB will resolved with valueA, you may find actionB is just a Promise in disguse, it's a memorized actionA, resolved only once.
+
+Freeze an Action means collapse all previous action chain into a value, normally you won't be able to write a huge action chain (>1000 levels), but once you do(use some helper), you may come across stack overflow problems,
+use Action.freeze to avoid this problem.
 
 ```coffee
 # FileA will be read immediately, processA will pending
@@ -127,7 +130,7 @@ freezedFileA
 .go()
 ```
 
-If Action resulted in error, Action.freeze will throw it, be sure to put a guard before it! Let's talk about errors, don't panic, once a continuation return a Error object, the following continuation won't fire, you can catch the error by putting a guard on the end. Of course guards have to be put before go.
+If Action resulted in error, Action.freeze will not throw it but pass it to downstream, you can put a guard after it, now let's talk more about errors, it's very interesting once a continuation return a Error object, the following continuation won't fire, you can catch the error by putting a guard on the end. Of course guards have to be put before go.
 
 ```coffee
 exampleAction
@@ -199,7 +202,7 @@ exampleAction
 ._go()
 ```
 
-Generally, you may want to use \_go in a control structure library, just like following helpers, there's also Action.\_freeze, which just like \_go, it will not throw error when freezing failed, it silently passed the error to downstream.
+Generally, you may want to use \_go in a control structure library, just like following helpers.
 
 Above is all the core stuff of Action.js, following are helpers to make your life easier (js/coffee document is W.I.P, here is source for amuse):
 
@@ -321,6 +324,25 @@ Action.gapRetry = (times, interval, action) ->
         .next ->
             if times-- != 0 then a
             else new Error 'Retry limit reached'
+    a
+```
+
+Like Action.retry and Action.gapRetry, we have Action.repeat and Action.gapRepeat, they're used to repeat an Action until an Error happened.
+
+```coffee
+Action.repeat = (times, action) ->
+    a = action.next (data) ->
+        if times-- != 0 then a
+        else data
+    a
+
+Action.gapRepeat = (times, interval, action) ->
+    a = action.next (data) ->
+        new Action (cb) ->
+            setTimeout cb, interval
+        .next ->
+            if times-- != 0 then a
+            else data
     a
 ```
 

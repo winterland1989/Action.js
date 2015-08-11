@@ -38,7 +38,7 @@ freezeAction = Action.freeze new Action (cb) ->
             res = Math.random()
             console.log 'random freezed game seeding: ', res
             cb res
-        100
+        1000
     )
 
 testAction = new Action (cb) -> cb()
