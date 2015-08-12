@@ -134,38 +134,7 @@ exampleAction.go(function(data){...});
 exampleAction.go(function(data){...});
 ```
 
-There's a combinator that fire an Action actionA immediately and return an Action actionB, it's Action.freeze, during the pending stage all the continuation are saved, after actionA are resolved with valueA, pass continuation to actionB will resolved with valueA, you may find actionB is just a Promise in disguse, it's a memorized actionA, resolved only once.
-
-Freeze an Action means collapse all previous action chain into a value, normally you won't be able to write a huge action chain (>1000 levels), but once you do(use some helper), you may come across stack overflow problems,
-use Action.freeze to avoid this problem.
-
-```js
-// FileA will be read immediately, processA will pending before file read finish
-freezedFileA = Action.freeze(new Action(function(cb){
-    readFile('FileA', function(err, data){
-        if(err){
-            cb(err);
-        }else{
-            cb(data);
-        }
-    });
-})
-freezedFileA
-.next(function(data){
-    processA(data)
-})
-.go()
-
-// after file read, freezedFileA will resolve immediately with the same data when freezing.
-freezedFileA
-.next(function(data){
-    processB(data)
-})
-.go()
-
-```
-
-If Action resulted in error, Action.freeze will not throw it but pass it to downstream, you can put a guard after it, now let's talk more about errors, it's very interesting once a continuation return a Error object, the following continuation won't fire, you can catch the error by putting a guard on the end. Of course guards have to be put before go.
+Now you have to face errors, once a continuation return a Error object, the following continuation won't fire, you can catch the error by putting a guard after. Of course guards have to be put before go.
 
 ```js
 exampleAction
@@ -177,7 +146,7 @@ exampleAction
 .go()
 ```
 
-You can put guard between continuations, so that it can just thehandle errors upstream and produce meaningful data to downstream, you can produce an Action inside guard too.
+You can put guard between continuations, so that it can handle errors upstream and produce meaningful data to downstream, you can produce an Action inside guard too.
 
 The guard pattern works great on node APIs, becasue they often don't throw error, but have an err flag, so you don't have to write try-catch, there's also a helper to make an Action from node style APIs.
 
@@ -267,6 +236,38 @@ Action.wrap wrap a value in an Action, (a.k.a. return in a haskell monad), when 
 Action.wrap = (data) ->
     new Action (cb) -> cb data
 ```
+
+Action.freeze fire an Action actionA immediately and return an Action actionB, during the pending stage all the continuation are saved, after actionA are resolved with valueA, saved continuation will be impended, continue passing continuation to actionB will immediately resolved with valueA, you may find actionB is just a Promise in disguse, it's a memorized actionA, resolved only once.
+
+Aother thing about freezing is that it will collapse all previous action chain into a memorized value, normally you won't be able to write a huge action chain (>1000 levels), but once you do(use some helper), you may come across stack overflow problems, because fire an action is equivalent to fire a manually written callback chain, you can easily use Action.freeze to avoid this problem.
+
+```js
+// FileA will be read immediately, processA will pending before file read finish
+freezedFileA = Action.freeze(new Action(function(cb){
+    readFile('FileA', function(err, data){
+        if(err){
+            cb(err);
+        }else{
+            cb(data);
+        }
+    });
+})
+freezedFileA
+.next(function(data){
+    processA(data)
+})
+.go()
+
+// after file read, freezedFileA will always resolve immediately with the same data when freezing.
+freezedFileA
+.next(function(data){
+    processB(data)
+})
+.go()
+
+```
+
+Note that, if during freezing Action resulted in error, Action.freeze will not throw it but pass it to downstream, you may want to put a guard after it.
 
 Now let's introduce a concept first:
 
