@@ -8,7 +8,6 @@ assertData = (data, target, label) ->
 actionFoo = new Action (cb) ->
     setTimeout ( -> cb 'foo'), 100
 
-
 monadicActionFoo = (data) ->
     new Action (cb) ->
         setTimeout ( -> cb data + 'foo'), 100
@@ -41,9 +40,10 @@ freezeAction = Action.freeze new Action (cb) ->
         1000
     )
 
-testAction = new Action (cb) -> cb()
+testAction = Action.wrap()
 testAction
 .next ->
+
     new Action (cb) ->
         actionFoo
         .next (data) ->
@@ -97,94 +97,84 @@ testAction
 
 .next ->
     new Action (cb) ->
-        testSeq = Action.sequence [monadicActionFoo, monadicActionBar]
+        testSeq = Action.chain [monadicActionFoo, monadicActionBar]
         testSeq('data')
         .next (data) ->
             assertData data, 'datafoobar'
         .go ->
-            console.log 'Action.sequence ok'
+            console.log 'Action.chain ok'
             cb()
 
 .next ->
     new Action (cb) ->
-        testSeqWithError = Action.sequence [monadicActionFoo, monadicActionFail, monadicActionBar]
+        testSeqWithError = Action.chain [monadicActionFoo, monadicActionFail, monadicActionBar]
         testSeqWithError('data')
         .next (data) ->
             assertData data, 'this wont fire'
         .guard (e) ->
             assertData e.message, 'testError'
         .go ->
-            console.log 'Action.sequence with error ok'
+            console.log 'Action.chain with error ok'
             cb()
 
 .next ->
     new Action (cb) ->
 
-        testAny = Action.any [monadicActionFoo('data1'), monadicActionBar('data2')]
+        testAny = Action.race [monadicActionFoo('data1'), monadicActionBar('data2')]
         testAny
         .next (data) ->
             assertData data, 'data1foo'
         .go ->
-            console.log 'Action.any without error ok'
+            console.log 'Action.race without error ok'
             cb()
 
 .next ->
     new Action (cb) ->
 
-        testAnyWhenError = Action.any [monadicActionBar('data1'), monadicActionFail('data2')]
-        testAnyWhenError
-        .next (data) ->
-            assertData data, 'this wont fire'
-        .guard (e) ->
-            assertData e.message, 'testError'
-        .go ->
-            console.log 'Action.any with error ok'
-            cb()
-
-.next ->
-    new Action (cb) ->
-
-        testAnySuccess = Action.anySuccess [monadicActionFoo('data1'), monadicActionBar('data2')]
-        testAnySuccess
-        .next (data) ->
-            assertData data, 'data1foo'
-        .go ->
-            console.log 'Action.anySuccess without error ok'
-            cb()
-
-.next ->
-    new Action (cb) ->
-
-        testAnySuccessWhenError1 = Action.anySuccess [monadicActionFoo('data1'), monadicActionFail('data2')]
-        testAnySuccessWhenError1
-        .next (data) ->
-            assertData data, 'data1foo'
-        .go ->
-            console.log 'Action.anySuccess with error 1 ok'
-            cb()
-
-.next ->
-    new Action (cb) ->
-
-        testAnySuccessWhenError2 = Action.anySuccess [monadicActionBar('data1'), monadicActionFail('data2')]
-        testAnySuccessWhenError2
-        .next (data) ->
-            assertData data, 'data1bar'
-        .go ->
-            console.log 'Action.anySuccess with error 2 ok'
-            cb()
-
-.next ->
-    new Action (cb) ->
-
-        testAnySuccessWhenALLError = Action.anySuccess [monadicActionFail('data1'), monadicActionFail('data2')]
+        testAnySuccessWhenALLError = Action.race [monadicActionFail('data1'), monadicActionFail('data2')]
         testAnySuccessWhenALLError
         .next (data) ->
             assertData data, 'this wont fire'
         .guard (e) ->
             assertData e.message, 'All actions failed'
         .go ->
-            console.log 'Action.anySuccess with all error ok'
+            console.log 'Action.race with all error ok'
+            cb()
+
+.next ->
+    new Action (cb) ->
+
+        testAnyWhenError = Action.race [monadicActionBar('data1'), monadicActionFail('data2')], true
+        testAnyWhenError
+        .next (data) ->
+            assertData data, 'this wont fire'
+        .guard (e) ->
+            assertData e.message, 'testError'
+        .go ->
+            console.log 'Action.race with error ok'
+            cb()
+
+.next ->
+    new Action (cb) ->
+
+        testAnySuccess = Action.race [monadicActionFoo('data1'), monadicActionFail('data2')], true
+        testAnySuccess
+        .next (data) ->
+            assertData data, 'data1foo'
+        .go ->
+            console.log 'Action.race with error ok'
+            cb()
+
+.next ->
+    console.log 'Test Action.delay'
+    new Action (cb) ->
+
+        testDelay = Action.delay 1000, monadicActionFoo('data1')
+        testDelay
+        .next (data) ->
+            assertData data, 'data1foo'
+        .go ->
+            console.log 'Action.delay with error ok'
             cb()
 
 .next ->
@@ -296,7 +286,7 @@ testAction
 
 .next ->
     new Action (cb) ->
-        testAll = Action.all [monadicActionFoo('data1'), monadicActionBar('data2')]
+        testAll = Action.parallel [monadicActionFoo('data1'), monadicActionBar('data2')]
         testAll
         .next (datas) ->
             assertData datas[0], 'data1foo'
@@ -307,7 +297,7 @@ testAction
 
 .next ->
     new Action (cb) ->
-        testAllWithError = Action.all [monadicActionFoo('data1'), monadicActionFail('data2')]
+        testAllWithError = Action.parallel [monadicActionFoo('data1'), monadicActionFail('data2')], true
         testAllWithError
         .next (datas) ->
             assertData datas[0], 'this wont fire'
@@ -319,7 +309,7 @@ testAction
 
 .next ->
     new Action (cb) ->
-        testAllSuccess = Action.allSuccess [monadicActionFoo('data1'), monadicActionBar('data2')]
+        testAllSuccess = Action.parallel [monadicActionFoo('data1'), monadicActionBar('data2')]
         testAllSuccess
         .next (datas) ->
             assertData datas[0], 'data1foo'
@@ -330,7 +320,7 @@ testAction
 
 .next ->
     new Action (cb) ->
-        testAllSuccessWithError = Action.allSuccess [monadicActionFoo('data1'), monadicActionFail('data2')]
+        testAllSuccessWithError = Action.parallel [monadicActionFoo('data1'), monadicActionFail('data2')]
         testAllSuccessWithError
         .next (datas) ->
             assertData datas[0], 'data1foo'
@@ -341,44 +331,38 @@ testAction
 
 .next ->
     new Action (cb) ->
-        testSequenceTry = Action.sequenceTry ['data1', 'data2'], monadicActionFoo
-        testSequenceTry
+        testSequence = Action.sequence (['data1', 'data2'].map monadicActionFoo)
+        testSequence
         .next (data) ->
-            assertData data, 'data1foo'
+            assertData data[0], 'data1foo'
+            assertData data[1], 'data2foo'
         .go ->
-            console.log 'Action.sequenceTry without error ok'
-            cb()
-
-.next ->
-    monadicActionBigger = (threshold) -> new Action (cb) ->
-        setTimeout(
-            ->
-                if threshold > 0.9
-                    cb 'good: ' + threshold
-                else cb new Error 'bad'
-            50
-        )
-    new Action (cb) ->
-        testSequenceTryWithError = Action.sequenceTry [0.13, 0.43, 0.91, 0.14], monadicActionBigger
-        testSequenceTryWithError
-        .next (data) ->
-            assertData data, 'good: 0.91'
-        .go ->
-            console.log 'Action.sequenceTry with error ok'
+            console.log 'Action.sequence without error ok'
             cb()
 
 .next ->
 
     new Action (cb) ->
-        testSequenceTryWithAllError = Action.sequenceTry ['', '', ''], monadicActionFail
-        testSequenceTryWithAllError
+        testSequence = Action.sequence [(monadicActionFail ''), (monadicActionFoo 'data1')]
+        testSequence
         .next (data) ->
-            assertData data, 'this wont fire'
-        .guard (e) ->
-            assertData e.message, 'Try limit reached'
+            assertData data[0].message, 'testError'
+            assertData data[1], 'data1foo'
         .go ->
-            console.log 'Action.sequenceTry with all error ok'
+            console.log 'Action.sequence with error ok'
             cb()
 
+.next ->
+
+    new Action (cb) ->
+        testSequence = Action.sequence [(monadicActionFail ''), (monadicActionFoo 'data1')], true
+        testSequence
+        .next (data) ->
+            console.log 'this wont fire'
+        .guard (data) ->
+            assertData data.message, 'testError'
+        .go ->
+            console.log 'Action.sequence with error ok'
+            cb()
 
 .go -> console.log 'test all passed'

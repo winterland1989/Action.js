@@ -1,0 +1,63 @@
+!_TAG_FILE_FORMAT	2	/extended format/
+!_TAG_FILE_SORTED	0	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Łukasz Korecki	/lukasz@korecki.me/
+!_TAG_PROGRAM_NAME	CoffeeTags	//
+!_TAG_PROGRAM_URL	https://github.com/lukaszkorecki/CoffeeTags	/GitHub repository/
+!_TAG_PROGRAM_VERSION	0.5.1	//
+Action	src/Action.coffee	/^class Action$/;"	c	line:10	language:coffee
+_go	src/Action.coffee	/^    _go: (cb) -> @action cb$/;"	f	line:15	language:coffee	object:Action
+_next	src/Action.coffee	/^    _next: (cb) ->$/;"	f	line:18	language:coffee	object:Action
+a	src/Action.coffee	/^            a = a._next (data) ->$/;"	f	line:174	language:coffee	object:sequence.action
+a	src/Action.coffee	/^    a = (Action.delay delay, action).guard (e) ->$/;"	f	line:128	language:coffee	object:gapRetry
+a	src/Action.coffee	/^    a = action._next (data) ->$/;"	f	line:109	language:coffee	object:repeat
+a	src/Action.coffee	/^    a = action.guard (e) ->$/;"	f	line:122	language:coffee	object:retry
+action	src/Action.coffee	/^        for action in actions[1..] then do (action = action) ->$/;"	f	line:173	language:coffee	object:sequence
+actionFoo	test/test.coffee	/^actionFoo = new Action (cb) ->$/;"	f	line:8	language:coffee	object:window
+assertData	test/test.coffee	/^assertData = (data, target, label) ->$/;"	f	line:3	language:coffee	object:window
+chain	src/Action.coffee	/^Action.chain = (monadicActions) -> (init) ->$/;"	f	line:99	language:coffee	object:window
+constructor	src/Action.coffee	/^    constructor: (@action) ->$/;"	f	line:12	language:coffee	object:Action
+delay	src/Action.coffee	/^Action.delay = (delay, action) ->$/;"	f	line:115	language:coffee	object:window
+freeze	src/Action.coffee	/^Action.freeze = (action) ->$/;"	f	line:76	language:coffee	object:window
+freezeAction	test/test.coffee	/^freezeAction = Action.freeze new Action (cb) ->$/;"	f	line:34	language:coffee	object:window
+gapRetry	src/Action.coffee	/^Action.gapRetry = (times, delay, action) ->$/;"	f	line:127	language:coffee	object:window
+go	src/Action.coffee	/^    go: (cb) ->$/;"	f	line:59	language:coffee	object:Action
+guard	src/Action.coffee	/^    guard: (cb) ->$/;"	f	line:45	language:coffee	object:Action
+if	src/Action.coffee	/^                        if countDown == 0$/;"	b	line:147	language:coffee
+if	src/Action.coffee	/^                    if (data instanceof Error) and stopAtError$/;"	b	line:142	language:coffee
+if	src/Action.coffee	/^                    if _data instanceof Action$/;"	b	line:39	language:coffee
+if	src/Action.coffee	/^                    if _data instanceof Action$/;"	b	line:51	language:coffee
+if	src/Action.coffee	/^                if (data instanceof Error) and stopAtError$/;"	b	line:175	language:coffee
+if	src/Action.coffee	/^                if (data not instanceof Error) or stopAtError$/;"	b	line:160	language:coffee
+if	src/Action.coffee	/^                if _data instanceof Action$/;"	b	line:24	language:coffee
+if	src/Action.coffee	/^                if data instanceof Error$/;"	b	line:34	language:coffee
+if	src/Action.coffee	/^                if data instanceof Error$/;"	b	line:49	language:coffee
+if	src/Action.coffee	/^            if (data instanceof Error) and stopAtError$/;"	b	line:182	language:coffee
+if	src/Action.coffee	/^            if data instanceof Error$/;"	b	line:61	language:coffee
+if	src/Action.coffee	/^        if ((data instanceof Error) and stopAtError) or times-- == 0$/;"	b	line:110	language:coffee
+if	src/Action.coffee	/^        if countDown == 0$/;"	b	line:155	language:coffee
+if	src/Action.coffee	/^        if countDown > 0$/;"	b	line:137	language:coffee
+if	src/Action.coffee	/^        if pending then callbacks.push cb$/;"	b	line:87	language:coffee
+if	src/Action.coffee	/^        if pending$/;"	b	line:81	language:coffee
+if	src/Action.coffee	/^        if times-- != 0 then a$/;"	b	line:123	language:coffee
+if	src/Action.coffee	/^        if times-- != 0 then a$/;"	b	line:129	language:coffee
+if	src/Action.coffee	/^    if countDown > 0$/;"	b	line:171	language:coffee
+if	src/Action.coffee	/^    if monadicActions.length > 0$/;"	b	line:100	language:coffee
+if	test/test.coffee	/^            if res > 0.9$/;"	b	line:28	language:coffee
+if	test/test.coffee	/^    if data != target$/;"	b	line:4	language:coffee
+ignore	src/Action.coffee	/^ignore = ->$/;"	f	line:4	language:coffee	object:window
+index	src/Action.coffee	/^            for action, i in actions then do (index = i) ->$/;"	f	line:139	language:coffee	object:parallel
+makeNodeAction	src/Action.coffee	/^Action.makeNodeAction = (nodeAPI, arg) ->$/;"	f	line:191	language:coffee	object:window
+monadicActionBar	test/test.coffee	/^monadicActionBar = (data) ->$/;"	f	line:15	language:coffee	object:window
+monadicActionFail	test/test.coffee	/^monadicActionFail = (data) ->$/;"	f	line:19	language:coffee	object:window
+monadicActionFoo	test/test.coffee	/^monadicActionFoo = (data) ->$/;"	f	line:11	language:coffee	object:window
+next	src/Action.coffee	/^    next: (cb) ->$/;"	f	line:30	language:coffee	object:Action
+parallel	src/Action.coffee	/^Action.parallel = (actions, stopAtError = false) ->$/;"	f	line:133	language:coffee	object:window
+race	src/Action.coffee	/^Action.race = (actions, stopAtError = false) ->$/;"	f	line:152	language:coffee	object:window
+randomAction	test/test.coffee	/^randomAction = new Action (cb) ->$/;"	f	line:23	language:coffee	object:window
+repeat	src/Action.coffee	/^Action.repeat = (times, action, stopAtError = false) ->$/;"	f	line:108	language:coffee	object:window
+replicate	src/Action.coffee	/^replicate = (x, n) -> while n-- >0 then x$/;"	f	line:7	language:coffee	object:window
+retry	src/Action.coffee	/^Action.retry = (times, action) ->$/;"	f	line:121	language:coffee	object:window
+safe	src/Action.coffee	/^Action.safe = (err, fn) -> (data) ->$/;"	f	line:91	language:coffee	object:window
+safeRaw	src/Action.coffee	/^Action.safeRaw = (fn) -> (data) ->$/;"	f	line:95	language:coffee	object:window
+sequence	src/Action.coffee	/^Action.sequence = (actions, stopAtError = false) ->$/;"	f	line:168	language:coffee	object:window
+wrap	src/Action.coffee	/^Action.wrap = (data) ->$/;"	f	line:72	language:coffee	object:window
