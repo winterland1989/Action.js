@@ -136,7 +136,7 @@ testAction
         .next (data) ->
             assertData data, 'this wont fire'
         .guard (e) ->
-            assertData e.message, 'All actions failed'
+            assertData e.message, 'RACE_ERROR: All actions failed'
         .go ->
             console.log 'Action.race with all error ok'
             cb()
@@ -185,7 +185,7 @@ testAction
         .next (data) ->
             assertData data, 'this wont fire'
         .guard (e) ->
-            assertData e.message, 'Retry limit reached'
+            assertData e.message, 'RETRY_ERROR: Retry limit reached'
         .go ->
             console.log 'Action.retry with all Error ok'
             cb()
@@ -204,7 +204,7 @@ testAction
         .next (data) ->
             assertData data, 'good'
         .guard (e) ->
-            assertData e.message, 'Retry limit reached'
+            assertData e.message, 'RETRY_ERROR: Retry limit reached'
         .go ->
             console.log 'Action.retry ok'
             cb()
@@ -218,7 +218,7 @@ testAction
         .next (data) ->
             assertData data, 'good'
         .guard (e) ->
-            assertData e.message, 'Retry limit reached'
+            assertData e.message, 'RETRY_ERROR: Retry limit reached'
         .go ->
             console.log 'Action.retry ok'
             cb()
@@ -232,7 +232,7 @@ testAction
         .next (data) ->
             assertData data, 'good'
         .guard (e) ->
-            assertData e.message, 'Retry limit reached'
+            assertData e.message, 'RETRY_ERROR: Retry limit reached'
         .go ->
             console.log 'Action.retry ok'
             cb()
@@ -251,7 +251,7 @@ testAction
         .next (data) ->
             assertData data, 'good'
         .guard (e) ->
-            assertData e.message, 'Retry limit reached'
+            assertData e.message, 'RETRY_ERROR: Retry limit reached'
         .go ->
             console.log 'Action.gapRetry ok'
             cb()
@@ -265,7 +265,7 @@ testAction
         .next (data) ->
             assertData data, 'good'
         .guard (e) ->
-            assertData e.message, 'Retry limit reached'
+            assertData e.message, 'RETRY_ERROR: Retry limit reached'
         .go ->
             console.log 'Action.gapRetry ok'
             cb()
@@ -279,7 +279,7 @@ testAction
         .next (data) ->
             assertData data, 'good'
         .guard (e) ->
-            assertData e.message, 'Retry limit reached'
+            assertData e.message, 'RETRY_ERROR: Retry limit reached'
         .go ->
             console.log 'Action.gapRetry ok'
             cb()

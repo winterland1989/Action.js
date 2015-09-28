@@ -3,9 +3,6 @@
 # ignore params
 ignore = ->
 
-# return an array repicate x n times if n > 0, else return []
-replicate = (x, n) -> while n-- >0 then x
-
 # Main class
 class Action
     # save an action to feed callback later
@@ -62,12 +59,6 @@ class Action
                 throw data
             else if cb? then cb data
 
-
-# Action error list
-Action.ERR_RETRY_LIMIT_REACHED = new Error 'Retry limit reached'
-Action.ERR_ALL_ACTIONS_FAILED = new Error 'All actions failed'
-
-
 # wrap a value in an Action
 Action.wrap = (data) ->
     new Action (cb) -> cb data
@@ -121,13 +112,13 @@ Action.delay = (delay, action) ->
 Action.retry = (times, action) ->
     a = action.guard (e) ->
         if times-- != 0 then a
-        else Action.ERR_RETRY_LIMIT_REACHED
+        else new Error 'RETRY_ERROR: Retry limit reached'
 
 # retry an Action n times if it failed
 Action.gapRetry = (times, delay, action) ->
     a = (Action.delay delay, action).guard (e) ->
         if times-- != 0 then a
-        else Action.ERR_RETRY_LIMIT_REACHED
+        else new Error 'RETRY_ERROR: Retry limit reached'
 
 # run an Array of Actions in parallel, return an Action wraps results in an Array
 Action.parallel = (actions, stopAtError = false) ->
@@ -153,7 +144,7 @@ Action.race = (actions, stopAtError = false) ->
     countDown = actions.length
     new Action (cb) ->
         if countDown == 0
-            cb Action.ERR_ALL_ACTIONS_FAILED
+            cb new Error 'RACE_ERROR: All actions failed'
         else for action in actions
             action._go (data) ->
                 countDown--
@@ -162,7 +153,7 @@ Action.race = (actions, stopAtError = false) ->
                     cb = ignore
                     countDown = -1
                 else if countDown == 0
-                    cb Action.ERR_ALL_ACTIONS_FAILED
+                    cb new Error 'RACE_ERROR: All actions failed'
 
 # run an Array of Actions in sequence, return an Action wraps results in an Array
 Action.sequence = (actions, stopAtError = false) ->

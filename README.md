@@ -1,102 +1,202 @@
-Action.js
-=========
+Action.js, a sane way to write async code
+=========================================
 
-A sane way to chain asynchronous actions inspired by cont monad in haskell. offer an alternative to state machine based promise. If you prefer read coffee, click [here](https://github.com/winterland1989/Action.js/blob/master/README_COFFEE.md)
+Promise and async/await are all great stuff, but Action.js offer an alternative faster and more concise.
 
-Example
--------
+Understand Action.js in 3 minutes
+---------------------------------
+
+Let's solve the callback hell proble form scratch, suppose we have a lovely function called `readFile`, and we want to read `data.txt`
+
+    readFile("data.txt", callback)
+
+We want compose different actions with this reading action, so we don't want to give a callback to it now, instead we save this action in a new `Action`:
 
 ```js
-var safe = Action.safe;
+var Action = function Action(action1) {
+    this.action = action1;
+}
 
-var exampleAction = new Action(function(cb){
-    readFile('fileA', function(err, data){
-        if (err){
-            cb(err);
-        }else{
-            cb(data);
-        }
-    });
-})
-.next(function(data){
-    return processData(data);
-})
-.next(function(data){
-    return new Action(function(cb){
-        processDataAsync(data, cb);
-    })
-})
-.next(safe(new Error('Something went wrong'), function(data){
-    return someThingMayWentWrong(data);
-}))
-.next(function(data){
-    // This process will be skip if previous step pass a Error
-    return anotherProcess(data);
-})
-.guard(function(e){
-    switch e.message
-        case '...': ...
-        ...
-
-    return 'Error handled'
-});
-
-exampleAction.go(console.log);
-
-...
-// after fileA changed you can go again
-exampleAction.go(console.log);
-
+var readFileAction = new Action(
+    function(cb){
+        readFile("data.txt", cb);
+    }
+);
 ```
-
-Difference from a promise
--------------------------
-
-Action has different semantics, inside it's not a state machine, but a function reference waiting for next continuation, so you can easily build an Action chain, the chain can be fired many times, rather than resolved once and waiting for consume, sometimes it's more suitable than a promise, and it's very easy if you want to memorize an Action's resolved value.
-
-Another difference is that if you want to pass errors to downstream, you simply return them inside your continuation, following continuations won't run until the error reach a guard.
-
-Check out the Document, it's really simple, and check the soure code if you feel interesting, it's less than 200 lines. Benchmark also show it has much smaller overhead than a Promise (see test/bench).
-
-Usage
------
-
-It's simple and stable, just grab from git and use, dist/Action.js is intend to be used as a common js module, and dist/Action.min.js is used in browser(window.Action namespace will be used).
-
-Document and tutorial
----------------------
-
-First you construct an Action like you contruct a Promise, the differences are that an Action won't run immediately at next tick, and any errors should be passed to the callback argument, we will talk about errors later:
-
+Ok, now we must have a method to extract the action from our `readFileAction`, instead use `readFileAction.action` directly, we write a function to accpet a callback, and pass this callback to the action inside our `readFileAction`:
 ```js
-var exampleAction = new Action(function(cb){
-    readFile('fileA', function(err, data){
-        if (err){
-            cb(err);
-        }else{
-            cb(data);
-        }
-    });
-});
+Action.prototype._go = function(cb) {
+    return this.action(cb);
+};
+readFileAction._go(function(data){
+    console.log(data);
+})
 ```
-
-If you don't have any process going on, you can fire the action and get the data now:
-
+You should understand what above `_go` does is equivalent to following:
 ```js
-exampleAction
-.go(function(data){
+readFile("data.txt", function(data){
     console.log(data);
 });
 ```
+Just with one different, we seperate action creation(wrap `readFile` in `new Action`) and application(use `_go` to supply a callback), in fact we have successfully did a [CPS transformation](https://en.wikipedia.org/wiki/Continuation-passing_style), we will talk about that later.
 
-Most of the time you want to process the data, you have to give an Action a continuation to do the next, a continuation is something like this:
+Now we want to chain callbacks in Promise `then` style:
+```js
+Action.prototype._next = function(cb) {
+    var self = this;
+    return new Action(function(_cb) {
+        return self.action(function(data) {
+            var _data = cb(data);
+            return _cb(_data);
+        });
+    });
+};
+```
+Let's break down a little here:
 
-    continuation :: data -> data | Action | Error
++ `_next` should accept a callback `cb`, and return a new `Action`.
++ When the new `Action` fired, the original `Action`'s action should be fired first, and send the value to `cb`.
 
-e.g. You process data inside continuation, return it, or return a new Action, or return an Error if error occurred. Examples:
+With our `_next`, we can chain multiply callbacks and pass data between them:
 
 ```js
-exampleAction
+readFileAction
+._next(function(data){
+    return data.length;
+})
+._next(function(data){
+    // data here is the length we obtain last step
+    console.log(data);
+    return length > 0
+})
+._go(function(data){
+    // data here is a Boolean
+    if(data){
+        ...
+    }
+})
+```
+
+Nice, we just use two simple functions, and the callbacks can be written in a more readable way, but we have a very important problem to be solve yet: what if we want nest async `Action`s inside an `Action`, it turn out with an adjusted `_next` function, we can handle that:
+
+```js
+Action.prototype._next = function(cb) {
+    var self = this;
+    return new Action(function(_cb) {
+        return self.action(function(data) {
+            var _data = cb(data);
+            if (_data instanceof Action) {
+                return _data._go(_cb);
+            } else {
+                return _cb(_data);
+            }
+        });
+    });
+};
+```
+We use `instanceof Action` to check if a callback returns a `Action` or not, if an `Action` is returned, we fire it with callbacks in future:
+
+```js
+readFileAction
+._next(function(data){
+    var newFile = parse(data);
+    return new Action(function(cb){
+        readFile(newFile, cb);
+    });
+})
+._go(function(data){
+    // data here is the newFile's content
+    console.log(data)
+})
+```
+Now we can say we have solved the callback hell problem! well, actually just 50% of it.
+One important thing to remember: **an `Action` is not happening if you don't fire it, and it can be fired multiple times, it's just a reference to a wrapped function**:
+```js
+readFileAction
+._next(processOne)
+._go(console.log)
+
+// after we do other things, or inside another request handler
+...
+
+// processTwo may receive different data since the file may change!
+readFileAction
+._next(processTwo)
+._go(console.log)
+```
+
+We'll present `freeze` to fire an `Action` immediately, now let's face another 50% of the callback hell issue.
+
+Error handling
+--------------
+
+One biggest issue with `Promise` is the error handleing is somewhat magic and complex:
+
++ It will eat your error sliently if you don't supply a `catch` at the end of the chain.
++ You have to use two different functions, `resolve` to pass value to the callbacks and `reject` to skip them, what about `throw` an `Error`?
+
+What we can do to make it simpler? Well, it's a complex problem, so we start solving it by simplify it: **We use `Error` type as a special type to pass error information to the downstream**, what does this mean?
+
+```js
+Action.prototype.next = function(cb) {
+    var self = this;
+    return new Action(function(_cb) {
+        return self.action(function(data) {
+            if (data instanceof Error) {
+                return _cb(data);
+            } else {
+                var _data = cb(data);
+                if (_data instanceof Action) {
+                    return _data._go(_cb);
+                } else {
+                    return _cb(_data);
+                }
+            }
+        });
+    });
+};
+```
+
+Here, let me present the final version of our `next` function, comparing to `_next` we write before, can you see what's the different? It still reture a new `Action`, when it fired, the original action are called, and we checked if the data are `instanceof Error`, if it's not, everything as usual, we feed it to `cb` that `next` received, but if it's an `Error`, we pass it to a future `_cb`, which we don't have now.
+
+Symmetrically, we have to define a function that special deal with `Errors`, and let normal values pass:
+
+```js
+Action.prototype.guard = function(cb) {
+    var self = this;
+    return new Action(function(_cb) {
+        return self.action(function(data) {
+           if (data instanceof Error) {
+            var _data = cb(data);
+                if (_data instanceof Action) {
+                    return _data._go(_cb);
+                } else {
+                    return _cb(_data);
+                }
+            } else {
+                return _cb(data);
+            }
+        });
+    });
+};
+```
+
+This time, we know the `cb` that `guard` received are prepared for `Error` values, so when we flip the logic.
+
+Following code demonstrate how to use our `next` and `guard`:
+
+```
+new Action(function(cb){
+    readFile('fileA', function(err, data){
+        if (err){
+            // see how to pass an Error to downstream, not reject, not throw, just return
+            cb(err);
+        }else{
+
+            cb(data);
+        }
+    });
+})
 .next(function(data){
     return processData(data);
 })
@@ -105,318 +205,117 @@ exampleAction
         processDataAsync(data, cb);
     })
 })
-.next(function(data){
-    if(someThingMayWentWrong(data)){
-        return new Error('Something went wrong');
+.next(
+    try{
+        return someProcessMayWentWrong(data);
+    }catch(e){
+        // same as above, we return the error
+        return e;
     }
-})
-...
-```
-
-Remember, you can't pass a continuation after you fire an Action. because action.go doesn't produce an Action.
-
-```js
-// this is wrong, and produce an error sort like 'next is undefined'
-exampleAction
-.go(function(data){
-    finish(data);
-})
+}))
 .next(function(data){
-    cantGetDataHere(data);
+    // This process will be skip if previous step pass an Error
+    return anotherProcess(data);
 })
-```
-
-But you can reuse the origin action if you want to fire it again.
-
-```js
-exampleAction.go(function(data){...});
-// after some time, or inside another request handler, the data maybe different this time!
-exampleAction.go(function(data){...});
-```
-
-Now you have to face errors, once a continuation return a Error object, the following continuation won't fire, you can catch the error by putting a guard after. Of course guards have to be put before go.
-
-```js
-exampleAction
 .guard(function(e){
-    switch e.message
-        case '...' : ...
-        ...
-})
-.go()
+    // This process will be skip if there's no Errors
+    return processError(e);
+});
+._go(console.log);
+
 ```
 
-You can put guard between continuations, so that it can handle errors upstream and produce meaningful data to downstream, you can produce an Action inside guard too.
+The final result will be produced by `anotherProcess` if `someProcessMayWentWrong` didn't go wrong, or produced by `processError` otherwise.
 
-The guard pattern works great on node APIs, becasue they often don't throw error, but have an err flag, so you don't have to write try-catch, there's also a helper to make an Action from node style APIs.
+You can place `guard` in the middle of the chain, all `Errors` before if will be handled by it, and the value it produced, will be passed to the rest of the chain.
+
+So, what if the use didn't supply a `guard`? Well, since use have to supply a callback to the `_go`, they can check if the callback they supplied received an `Error` or not like this:
 
 ```js
-var mkNodeAction = Action.mkNodeAction;
-exampleAction = mkNodeAction(readFile, 'fileA');
-// this is equivalent to below
-exampleAction = new Action(function(cb){
+apiReturnAction('...')._go(function(data){
+    if (data instanceof Error){
+        //handle error here
+        ...
+    } else {
+        // process data here
+        ...
+    }
+});
+
+```
+Yeah, it does work, but we don't want force our user to write like above, and we should throw `Error` in case user didn't `guard` them:
+
+```js
+Action.prototype.go = function(cb) {
+    return this.action(function(data) {
+        if (data instanceof Error) {
+            throw data;
+        } else if (cb != null) {
+            return cb(data);
+        }
+    });
+};
+
+```
+Now if user don't guard `Error`s, we will yell at them when `Error` occurs!
+```
+new Action(function(cb){
     readFile('fileA', function(err, data){
-        if(err){
-            cb(err); 
+        if (err){
+            // suppose we got an Error here
+            cb(err);
         }else{
+
             cb(data);
         }
     });
-});
+})
+.go() // The Error will be throw!
+
 ```
 
-But some errors have to be caught explicitly, you can do something like this:
+Finally, to ease error management, and to attack the [v8 optimization problems](https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#2-unsupported-syntax). We recommand use `Action.safe`:
 
 ```js
-exampleAction
-.next(function(data){
-    try{
-        someDangerousThing(data);
-    }
-    catch(e){
-        return e;
-    }
-}
+// this small function minimize v8 try-catch overhead, and make attaching custom Error easy
+Action.safe = function(err, fn) {
+    return function(data) {
+        try {
+            return fn(data);
+        } catch (_error) {
+            return _error;
+        }
+    };
+};
 ```
-
-but this's boring, more importantly, it hurts the performance if you are not careful enough, because v8 doesn't optimize functions contain try-catch, so we use a combinator to get around it(minimize the function contain try-catch), and for sure, it's shorter!
-
-```js
-var safe = Action.safe
-var safeRaw = Action.safeRaw
-// this will catch the error during someThingMayWentWrong and return it
-.next(safeRaw(function(data){
-    someThingMayWentWrong(data);
-}))
-.next ...
-// this will return a customized error when error happened.
-.next(safe(new Error('Fire missile failed'), function(data){
-    FireMissle(data);
-}))
-.next ...
+And use `safe` wrap your `someProcessMayWentWrong`:
 ```
-
-It's a design choice that Action.js don't catch errors by default, it will make you pure code faster, and make your errors explicit, use safe instead of safeRaw is also highly recommended, MAKE YOUR ERRORS MORE MEANINGFUL!
-
-The price is we can't catch your error instead of yourself and provide long-stack-trace, hopefully this design choice can help you write better error handling code rather than bite you.
-
-Notice that if you don't guard errors before go, and error happened, then go will throw it, this behavior may make sense or not, there's another function to fire an Action but also can capture error, it's sort of:
-
-    Action.prototype._go :: ( cb :: (Error | data) -> a ) -> b
-
-```js
-// use _go if you want to capture the error
-exampleAction
-._go(function(data){
-    if(data instanceof Error){
-        ...
-    }
-    else{
-        ...
-    }
-});
-// note, go may don't need a argument, following is ok:
-exampleAction
-.go()
-
-// but _go must have one, following will produce a error:
-exampleAction
-._go()
-```
-
-Generally, you may want to use \_go in a control structure library, just like following helpers.
-
-Above is all the core stuff of Action.js, following are helpers to make your life easier (js/coffee document is W.I.P, here is source for amuse):
-
-Action.wrap wrap a value in an Action, (a.k.a. return in a haskell monad), when this Action fire, the data will be passed on, the data can be an Error, in that case it will skip all nexts and hit first guard.
-
-    Action.wrap :: a -> Action
-
-```coffee
-Action.wrap = (data) ->
-    new Action (cb) -> cb data
-```
-
-Action.freeze fire an Action actionA immediately and return an Action actionB, during the pending stage all the continuation are saved, after actionA are resolved with valueA, saved continuation will be impended, continue passing continuation to actionB will immediately resolved with valueA, you may find actionB is just a Promise in disguse, it's a memorized actionA, resolved only once.
-
-Aother thing about freezing is that it will collapse all previous action chain into a memorized value, normally you won't be able to write a huge action chain (>1000 levels), but once you do(use some helper), you may come across stack overflow problems, because fire an action is equivalent to fire a manually written callback chain, you can easily use Action.freeze to avoid this problem.
-
-```js
-// FileA will be read immediately, processA will pending before file read finish
-freezedFileA = Action.freeze(new Action(function(cb){
-    readFile('FileA', function(err, data){
-        if(err){
+var safe = Action.safe;
+new Action(function(cb){
+    readFile('fileA', function(err, data){
+        if (err){
+            // see how to pass an Error to downstream, not reject, not throw, just return
             cb(err);
         }else{
             cb(data);
         }
     });
 })
-freezedFileA
-.next(function(data){
-    processA(data)
+.next(
+    safe(new Error("PROCESS_ERROR_XXX: process xxx failed when xxx"), someProcessMayWentWrong)
+)
+.next(...)
+.next(...)
+.guard(function(e){
+    if (e.message.indexOf('ENOENT') === 0){
+        ...
+    }
+    if (e.message.indexOf('PROCESS_ERROR_XXX') === 0 ){
+        ...
+    }
 })
 .go()
 
-// after file read, freezedFileA will always resolve immediately with the same data when freezing.
-freezedFileA
-.next(function(data){
-    processB(data)
-})
-.go()
-
 ```
 
-Note that, if during freezing Action resulted in error, Action.freeze will not throw it but pass it to downstream, you may want to put a guard after it.
-
-Now let's introduce a concept first:
-
-    monadicAction :: (data) -> Action
-
-A monadicAction is simply a function that produce an Action, don't bother why it's called monadic if you don't want to know. it's just a type of function.
-
-Action.sequence combine an array of monadicActions, and produce a new monadicAction, once this monadicAction get the init data, it will run the all the monadicActions in the array sequential, the data produce by fire first monadicAction will be passed to the second, and so on util all monadicAction are fired.
-
-    Action.sequence :: ([monadicAction]) -> monadicAction
-
-```coffee
-Action.sequence = (monadicActions) -> (init) ->
-    if monadicActions.length > 0
-        a = monadicActions[0](init)
-        for monadicAction in monadicActions[1..]
-            a = a.next monadicAction
-        a
-    else Action.wrap new Error 'No monadic actions given'
-```
-
-Action.any combine an array of Actions and return a new Action finalA, first we fire all of the Actions, as soon as one of the Actions finished, finalA starts to call its continuation. and rest of the Actions are ignored.
-
-    Action.any :: ([Action]) -> Action
-
-```coffee
-Action.any = (actions) ->
-    new Action (cb) ->
-        for action in actions
-            action._go (data) ->
-                cb data
-                cb = ignore
-```
-
-Action.anySuccess is similar to Action.any, but we don't stop when the Actions finished with an Error, we continue to look for the first successful action, if all Actions failed, Action.anySuccess pass an Error 'All actions failed' to following continuations.
-
-    Action.anySuccess :: ([Action]) -> Action
-
-```coffee
-Action.anySuccess = (actions) ->
-    countDown = actions.length
-    new Action (cb) ->
-        for action in actions
-            action._go (data) ->
-                countDown--
-                if data not instanceof Error
-                    cb data
-                    cb = ignore
-                    countDown = -1
-                else if countDown == 0
-                    cb new Error 'All actions failed'
-```
-
-Like Action.any and Action.anySuccess, we have Action.all and Action.allSuccess, the all-functions run all actions and return an Action that need a continuation consuming array, e.g. all the actions' result are passed to down stream as an array, the Action.all will pass the first error if error happend, while Action.allSuccess put all the errors and successful results in the array.
-
-    Action.all :: ([Action]) -> Action
-    Action.allSuccess :: ([Action]) -> Action
-
-```coffee
-Action.all = (actions) ->
-    results = []
-    countDown = actions.length
-    new Action (cb) ->
-        for action, i in actions then do (index = i) ->
-            action._go (data) ->
-                countDown--
-                if data instanceof Error
-                    cb data
-                    cb = ignore
-                else
-                    results[index] = data
-                    if countDown == 0
-                        cb results
-
-Action.allSuccess = (actions) ->
-    results = []
-    countDown = actions.length
-    new Action (cb) ->
-        for action, i in actions then do (index = i) ->
-            action._go (data) ->
-                countDown--
-                results[index] = data
-                if countDown == 0
-                    cb results
-```
-
-Action.retry take a number as retry limit, and an Action to retry, it's simple, but one thing to note: the number is retry limit, not the total try number, so if you pass 1, the action will retry once after first fail, that's totally two times. you can pass -1 to try forever util an action successfully finish.
-
-    Action.retry :: (times::Int, Action) -> Action
-
-```coffee
-Action.retry = (times, action) ->
-    a = action.guard (e) ->
-        if times-- != 0 then a
-        else new Error 'Retry limit reached'
-    a
-```
-
-Action.gapRetry will take an extra parameter as interval(in ms) between two retrys, like Action.retry, retry action will pass error 'Retry limit reached' if no action finished successfully:
-
-    Action.retry :: (times::Int, interval::Int, Action) -> Action
-
-```coffee
-Action.gapRetry = (times, interval, action) ->
-    a = action.guard (e) ->
-        new Action (cb) ->
-            setTimeout cb, interval
-        .next ->
-            if times-- != 0 then a
-            else new Error 'Retry limit reached'
-    a
-```
-
-Like Action.retry and Action.gapRetry, we have Action.repeat and Action.gapRepeat, they're used to repeat an Action until an Error happened.
-
-```coffee
-Action.repeat = (times, action) ->
-    a = action.next (data) ->
-        if times-- != 0 then a
-        else data
-    a
-
-Action.gapRepeat = (times, interval, action) ->
-    a = action.next (data) ->
-        new Action (cb) ->
-            setTimeout cb, interval
-        .next ->
-            if times-- != 0 then a
-            else data
-    a
-```
-
-Sometimes, you want to try different input sequential not parallel, you can use Action.sequenceTry, it will pass different input to monadicAction to produce the action to try, and try them in order, like Action.trySuccess, sequenceTry will try to find the first successful action, if all try failed, a 'Try limit reached' error will be passed on:
-
-    Action.sequenceTry :: ([inputs], monadicAction) -> Action
-
-```coffee
-Action.sequenceTry = (args, monadicAction) ->
-    length = args.length
-    countUp = 0
-    a = (arg) ->
-        monadicAction(arg).guard (e) ->
-            if countUp++ < length
-                a(args[countUp])
-            else
-                new Error 'Try limit reached'
-    if length > 0
-        a(args[0])
-    else Action.wrap new Error 'No argmuents for monadic'
-```
-
-That's all, if you think some other interesting combinators should be here, or find a bug, pull requests are welcome. 
+That's all core functions of `Action` is going to give you.
