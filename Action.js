@@ -330,7 +330,7 @@
       return Action;
     });
   } else if (typeof window !== "undefined" && window !== null) {
-    window.Action = Actions;
+    window.Action = Action;
   }
 
 }).call(this);

@@ -198,4 +198,4 @@ if module? and  module.exports?
 else if (typeof define == "function" and define.amd)
     define () -> Action
 else if window?
-    window.Action = Actions
+    window.Action = Action
