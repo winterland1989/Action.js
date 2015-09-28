@@ -193,4 +193,9 @@ Action.makeNodeAction = (nodeAPI, arg) ->
         nodeAPI arg, (err, data) ->
             cb if err then err else data
 
-module.exports = Action
+if module? and  module.exports?
+    module.exports = Action
+else if (typeof define == "function" and define.amd)
+    define () -> Action
+else if window?
+    window.Action = Actions

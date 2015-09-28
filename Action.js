@@ -323,6 +323,14 @@
     });
   };
 
-  module.exports = Action;
+  if ((typeof module !== "undefined" && module !== null) && (module.exports != null)) {
+    module.exports = Action;
+  } else if (typeof define === "function" && define.amd) {
+    define(function() {
+      return Action;
+    });
+  } else if (typeof window !== "undefined" && window !== null) {
+    window.Action = Actions;
+  }
 
 }).call(this);
