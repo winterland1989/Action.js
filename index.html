@@ -1,29 +1,353 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-    <meta charset="UTF-8">
-    <title>Action.js</title>
-    <link rel="stylesheet" type="text/css" href="libs/common.css">
-    <link rel="stylesheet" type="text/css" href="libs/markdown.css">
-    <link rel="stylesheet" type="text/css" href="libs/monokai.css">
-    <!--[if lt IE 9]>
-    <script>window.ltIE9=true;</script>
-    <![endif]-->
-    <!--[if lt IE 8]>
-    <script>window.ltIE8=true;</script>
-    <![endif]-->
-    
-</head>
-<body>
-<!--[if lt IE 9]>
-<script type="text/javascript" src="/libs/es5-shim.min.js" ></script>
-<![endif]-->
-<script type="text/javascript" src="https://raw.githubusercontent.com/winterland1989/Action.js/master/Action.js" ></script>
-<script type="text/javascript" src="https://raw.githubusercontent.com/jashkenas/coffeescript/master/extras/coffee-script.js" ></script>
-<script type="text/javascript" src="https://raw.githubusercontent.com/lhorie/mithril.js/next/mithril.js" ></script>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Action.js by winterland1989</title>
 
-<script type="text/javascript" src="libs/highlight.pack.js" ></script>
-<script type="text/javascript" src="libs/marked.min.js" ></script>
-<script type="text/javascript" src="index.js"></script>
-</body>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Action.js</h1>
+        <p>A clean alternative to promise</p>
+
+        <p class="view"><a href="https://github.com/winterland1989/Action.js">View the Project on GitHub <small>winterland1989/Action.js</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/winterland1989/Action.js/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/winterland1989/Action.js/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/winterland1989/Action.js">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>
+<a id="actionjs-a-sane-way-to-write-async-code" class="anchor" href="#actionjs-a-sane-way-to-write-async-code" aria-hidden="true"><span class="octicon octicon-link"></span></a>Action.js, a sane way to write async code</h1>
+
+<p>Promise and async/await are all great stuff, but Action.js offer an alternative faster and more concise.</p>
+
+<h2>
+<a id="understand-actionjs-in-3-minutes" class="anchor" href="#understand-actionjs-in-3-minutes" aria-hidden="true"><span class="octicon octicon-link"></span></a>Understand Action.js in 3 minutes</h2>
+
+<p>Let's solve the callback hell proble form scratch, suppose we have a lovely function called <code>readFile</code>, and we want to read <code>data.txt</code></p>
+
+<pre><code>readFile("data.txt", callback)
+</code></pre>
+
+<p>We want compose different actions with this reading action, so we don't want to give a callback to it now, instead we save this action in a new <code>Action</code>:</p>
+
+<div class="highlight highlight-source-js"><pre><span class="pl-k">var</span> <span class="pl-en">Action</span> <span class="pl-k">=</span> <span class="pl-k">function</span> <span class="pl-en">Action</span>(<span class="pl-smi">action1</span>) {
+    <span class="pl-v">this</span>.<span class="pl-c1">action</span> <span class="pl-k">=</span> action1;
+}
+
+<span class="pl-k">var</span> readFileAction <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-en">Action</span>(
+    <span class="pl-k">function</span>(<span class="pl-smi">cb</span>){
+        readFile(<span class="pl-s"><span class="pl-pds">"</span>data.txt<span class="pl-pds">"</span></span>, cb);
+    }
+);</pre></div>
+
+<p>Ok, now we must have a method to extract the action from our <code>readFileAction</code>, instead use <code>readFileAction.action</code> directly, we write a function to accpet a callback, and pass this callback to the action inside our <code>readFileAction</code>:</p>
+
+<div class="highlight highlight-source-js"><pre><span class="pl-c1">Action</span>.<span class="pl-c1">prototype</span>.<span class="pl-en">_go</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">cb</span>) {
+    <span class="pl-k">return</span> <span class="pl-v">this</span>.<span class="pl-c1">action</span>(cb);
+};
+readFileAction._go(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
+    <span class="pl-en">console</span>.<span class="pl-c1">log</span>(data);
+})</pre></div>
+
+<p>You should understand what above <code>_go</code> does is equivalent to following:</p>
+
+<div class="highlight highlight-source-js"><pre>readFile(<span class="pl-s"><span class="pl-pds">"</span>data.txt<span class="pl-pds">"</span></span>, <span class="pl-k">function</span>(<span class="pl-smi">data</span>){
+    <span class="pl-en">console</span>.<span class="pl-c1">log</span>(data);
+});</pre></div>
+
+<p>Just with one different, we seperate action creation(wrap <code>readFile</code> in <code>new Action</code>) and application(use <code>_go</code> to supply a callback), in fact we have successfully did a <a href="https://en.wikipedia.org/wiki/Continuation-passing_style">CPS transformation</a>, we will talk about that later.</p>
+
+<p>Now we want to chain callbacks in Promise <code>then</code> style:</p>
+
+<div class="highlight highlight-source-js"><pre><span class="pl-c1">Action</span>.<span class="pl-c1">prototype</span>.<span class="pl-en">_next</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">cb</span>) {
+    <span class="pl-k">var</span> self <span class="pl-k">=</span> <span class="pl-v">this</span>;
+    <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-en">Action</span>(<span class="pl-k">function</span>(<span class="pl-smi">_cb</span>) {
+        <span class="pl-k">return</span> self.<span class="pl-c1">action</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
+            <span class="pl-k">var</span> _data <span class="pl-k">=</span> cb(data);
+            <span class="pl-k">return</span> _cb(_data);
+        });
+    });
+};</pre></div>
+
+<p>Let's break down a little here:</p>
+
+<ul>
+<li>
+<code>_next</code> should accept a callback <code>cb</code>, and return a new <code>Action</code>.</li>
+<li>When the new <code>Action</code> fired, the original <code>Action</code>'s action should be fired first, and send the value to <code>cb</code>.</li>
+</ul>
+
+<p>With our <code>_next</code>, we can chain multiply callbacks and pass data between them:</p>
+
+<div class="highlight highlight-source-js"><pre>readFileAction
+._next(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
+    <span class="pl-k">return</span> data.<span class="pl-c1">length</span>;
+})
+._next(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
+    <span class="pl-c">// data here is the length we obtain last step</span>
+    <span class="pl-en">console</span>.<span class="pl-c1">log</span>(data);
+    <span class="pl-k">return</span> length <span class="pl-k">&gt;</span> <span class="pl-c1">0</span>
+})
+._go(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
+    <span class="pl-c">// data here is a Boolean</span>
+    <span class="pl-k">if</span>(data){
+        ...
+    }
+})</pre></div>
+
+<p>Nice, we just use two simple functions, and the callbacks can be written in a more readable way, but we have a very important problem to be solve yet: what if we want nest async <code>Action</code>s inside an <code>Action</code>, it turn out with an adjusted <code>_next</code> function, we can handle that:</p>
+
+<div class="highlight highlight-source-js"><pre><span class="pl-c1">Action</span>.<span class="pl-c1">prototype</span>.<span class="pl-en">_next</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">cb</span>) {
+    <span class="pl-k">var</span> self <span class="pl-k">=</span> <span class="pl-v">this</span>;
+    <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-en">Action</span>(<span class="pl-k">function</span>(<span class="pl-smi">_cb</span>) {
+        <span class="pl-k">return</span> self.<span class="pl-c1">action</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
+            <span class="pl-k">var</span> _data <span class="pl-k">=</span> cb(data);
+            <span class="pl-k">if</span> (_data <span class="pl-k">instanceof</span> Action) {
+                <span class="pl-k">return</span> _data._go(_cb);
+            } <span class="pl-k">else</span> {
+                <span class="pl-k">return</span> _cb(_data);
+            }
+        });
+    });
+};</pre></div>
+
+<p>We use <code>instanceof Action</code> to check if a callback returns a <code>Action</code> or not, if an <code>Action</code> is returned, we fire it with callbacks in future:</p>
+
+<div class="highlight highlight-source-js"><pre>readFileAction
+._next(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
+    <span class="pl-k">var</span> newFile <span class="pl-k">=</span> <span class="pl-c1">parse</span>(data);
+    <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-en">Action</span>(<span class="pl-k">function</span>(<span class="pl-smi">cb</span>){
+        readFile(newFile, cb);
+    });
+})
+._go(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
+    <span class="pl-c">// data here is the newFile's content</span>
+    <span class="pl-en">console</span>.<span class="pl-c1">log</span>(data)
+})</pre></div>
+
+<p>Now we can say we have solved the callback hell problem! well, actually just 50% of it.
+One important thing to remember: <strong>an <code>Action</code> is not happening if you don't fire it, and it can be fired multiple times, it's just a reference to a wrapped function</strong>:</p>
+
+<div class="highlight highlight-source-js"><pre>readFileAction
+._next(processOne)
+._go(<span class="pl-en">console</span>.log)
+
+<span class="pl-c">// after we do other things, or inside another request handler</span>
+...
+
+<span class="pl-c">// processTwo may receive different data since the file may change!</span>
+readFileAction
+._next(processTwo)
+._go(<span class="pl-en">console</span>.log)</pre></div>
+
+<p>We'll present <code>freeze</code> to fire an <code>Action</code> immediately, now let's face another 50% of the callback hell issue.</p>
+
+<h2>
+<a id="error-handling" class="anchor" href="#error-handling" aria-hidden="true"><span class="octicon octicon-link"></span></a>Error handling</h2>
+
+<p>One biggest issue with <code>Promise</code> is the error handleing is somewhat magic and complex:</p>
+
+<ul>
+<li>It will eat your error sliently if you don't supply a <code>catch</code> at the end of the chain.</li>
+<li>You have to use two different functions, <code>resolve</code> to pass value to the callbacks and <code>reject</code> to skip them, what about <code>throw</code> an <code>Error</code>?</li>
+</ul>
+
+<p>What we can do to make it simpler? Well, it's a complex problem, so we start solving it by simplify it: <strong>We use <code>Error</code> type as a special type to pass error information to the downstream</strong>, what does this mean?</p>
+
+<div class="highlight highlight-source-js"><pre><span class="pl-c1">Action</span>.<span class="pl-c1">prototype</span>.<span class="pl-en">next</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">cb</span>) {
+    <span class="pl-k">var</span> self <span class="pl-k">=</span> <span class="pl-v">this</span>;
+    <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-en">Action</span>(<span class="pl-k">function</span>(<span class="pl-smi">_cb</span>) {
+        <span class="pl-k">return</span> self.<span class="pl-c1">action</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
+            <span class="pl-k">if</span> (data <span class="pl-k">instanceof</span> Error) {
+                <span class="pl-k">return</span> _cb(data);
+            } <span class="pl-k">else</span> {
+                <span class="pl-k">var</span> _data <span class="pl-k">=</span> cb(data);
+                <span class="pl-k">if</span> (_data <span class="pl-k">instanceof</span> Action) {
+                    <span class="pl-k">return</span> _data._go(_cb);
+                } <span class="pl-k">else</span> {
+                    <span class="pl-k">return</span> _cb(_data);
+                }
+            }
+        });
+    });
+};</pre></div>
+
+<p>Here, let me present the final version of our <code>next</code> function, comparing to <code>_next</code> we write before, can you see what's the different? It still reture a new <code>Action</code>, when it fired, the original action are called, and we checked if the data are <code>instanceof Error</code>, if it's not, everything as usual, we feed it to <code>cb</code> that <code>next</code> received, but if it's an <code>Error</code>, we pass it to a future <code>_cb</code>, which we don't have now.</p>
+
+<p>Symmetrically, we have to define a function that special deal with <code>Errors</code>, and let normal values pass:</p>
+
+<div class="highlight highlight-source-js"><pre><span class="pl-c1">Action</span>.<span class="pl-c1">prototype</span>.<span class="pl-en">guard</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">cb</span>) {
+    <span class="pl-k">var</span> self <span class="pl-k">=</span> <span class="pl-v">this</span>;
+    <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-en">Action</span>(<span class="pl-k">function</span>(<span class="pl-smi">_cb</span>) {
+        <span class="pl-k">return</span> self.<span class="pl-c1">action</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
+           <span class="pl-k">if</span> (data <span class="pl-k">instanceof</span> Error) {
+            <span class="pl-k">var</span> _data <span class="pl-k">=</span> cb(data);
+                <span class="pl-k">if</span> (_data <span class="pl-k">instanceof</span> Action) {
+                    <span class="pl-k">return</span> _data._go(_cb);
+                } <span class="pl-k">else</span> {
+                    <span class="pl-k">return</span> _cb(_data);
+                }
+            } <span class="pl-k">else</span> {
+                <span class="pl-k">return</span> _cb(data);
+            }
+        });
+    });
+};</pre></div>
+
+<p>This time, we know the <code>cb</code> that <code>guard</code> received are prepared for <code>Error</code> values, so when we flip the logic.</p>
+
+<p>Following code demonstrate how to use our <code>next</code> and <code>guard</code>:</p>
+
+<pre><code>new Action(function(cb){
+    readFile('fileA', function(err, data){
+        if (err){
+            // see how to pass an Error to downstream, not reject, not throw, just return
+            cb(err);
+        }else{
+
+            cb(data);
+        }
+    });
+})
+.next(function(data){
+    return processData(data);
+})
+.next(function(data){
+    return new Action(function(cb){
+        processDataAsync(data, cb);
+    })
+})
+.next(
+    try{
+        return someProcessMayWentWrong(data);
+    }catch(e){
+        // same as above, we return the error
+        return e;
+    }
+}))
+.next(function(data){
+    // This process will be skip if previous step pass an Error
+    return anotherProcess(data);
+})
+.guard(function(e){
+    // This process will be skip if there's no Errors
+    return processError(e);
+});
+._go(console.log);
+
+</code></pre>
+
+<p>The final result will be produced by <code>anotherProcess</code> if <code>someProcessMayWentWrong</code> didn't go wrong, or produced by <code>processError</code> otherwise.</p>
+
+<p>You can place <code>guard</code> in the middle of the chain, all <code>Errors</code> before if will be handled by it, and the value it produced, will be passed to the rest of the chain.</p>
+
+<p>So, what if the use didn't supply a <code>guard</code>? Well, since use have to supply a callback to the <code>_go</code>, they can check if the callback they supplied received an <code>Error</code> or not like this:</p>
+
+<div class="highlight highlight-source-js"><pre>apiReturnAction(<span class="pl-s"><span class="pl-pds">'</span>...<span class="pl-pds">'</span></span>)._go(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
+    <span class="pl-k">if</span> (data <span class="pl-k">instanceof</span> Error){
+        <span class="pl-c">//handle error here</span>
+        ...
+    } <span class="pl-k">else</span> {
+        <span class="pl-c">// process data here</span>
+        ...
+    }
+});
+</pre></div>
+
+<p>Yeah, it does work, but we don't want force our user to write like above, and we should throw <code>Error</code> in case user didn't <code>guard</code> them:</p>
+
+<div class="highlight highlight-source-js"><pre><span class="pl-c1">Action</span>.<span class="pl-c1">prototype</span>.<span class="pl-en">go</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">cb</span>) {
+    <span class="pl-k">return</span> <span class="pl-v">this</span>.<span class="pl-c1">action</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
+        <span class="pl-k">if</span> (data <span class="pl-k">instanceof</span> Error) {
+            <span class="pl-k">throw</span> data;
+        } <span class="pl-k">else</span> <span class="pl-k">if</span> (cb <span class="pl-k">!=</span> <span class="pl-c1">null</span>) {
+            <span class="pl-k">return</span> cb(data);
+        }
+    });
+};
+</pre></div>
+
+<p>Now if user don't guard <code>Error</code>s, we will yell at them when <code>Error</code> occurs!</p>
+
+<pre><code>new Action(function(cb){
+    readFile('fileA', function(err, data){
+        if (err){
+            // suppose we got an Error here
+            cb(err);
+        }else{
+
+            cb(data);
+        }
+    });
+})
+.go() // The Error will be throw!
+
+</code></pre>
+
+<p>Finally, to ease error management, and to attack the <a href="https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#2-unsupported-syntax">v8 optimization problems</a>. We recommand use <code>Action.safe</code>:</p>
+
+<div class="highlight highlight-source-js"><pre><span class="pl-c">// this small function minimize v8 try-catch overhead, and make attaching custom Error easy</span>
+<span class="pl-c1">Action</span>.<span class="pl-en">safe</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">err</span>, <span class="pl-smi">fn</span>) {
+    <span class="pl-k">return</span> <span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
+        <span class="pl-k">try</span> {
+            <span class="pl-k">return</span> fn(data);
+        } <span class="pl-k">catch</span> (_error) {
+            <span class="pl-k">return</span> _error;
+        }
+    };
+};</pre></div>
+
+<p>And use <code>safe</code> wrap your <code>someProcessMayWentWrong</code>:</p>
+
+<pre><code>var safe = Action.safe;
+new Action(function(cb){
+    readFile('fileA', function(err, data){
+        if (err){
+            // see how to pass an Error to downstream, not reject, not throw, just return
+            cb(err);
+        }else{
+            cb(data);
+        }
+    });
+})
+.next(
+    safe(new Error("PROCESS_ERROR_XXX: process xxx failed when xxx"), someProcessMayWentWrong)
+)
+.next(...)
+.next(...)
+.guard(function(e){
+    if (e.message.indexOf('ENOENT') === 0){
+        ...
+    }
+    if (e.message.indexOf('PROCESS_ERROR_XXX') === 0 ){
+        ...
+    }
+})
+.go()
+
+</code></pre>
+
+<p>That's all core functions of <code>Action</code> is going to give you.</p>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/winterland1989">winterland1989</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
 </html>
