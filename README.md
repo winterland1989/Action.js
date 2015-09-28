@@ -1,16 +1,16 @@
 Action.js, a sane way to write async code
 =========================================
 
-Promise and async/await are all great stuff, but Action.js offer an alternative faster and more concise.
+Promise and async/await are all great stuff, but Action.js offer a faster and simpler alternative.
 
-Understand Action.js in 3 minutes
+Understand Action.js in 5 minutes
 ---------------------------------
 
-Let's solve the callback hell proble form scratch, suppose we have a lovely function called `readFile`, and we want to read `data.txt`
+Suppose we want to solve the nest callback problem form scratch, we have an async function called `readFile`, and we want to read `data.txt`, we have to supply a `callback` to it:
 
     readFile("data.txt", callback)
 
-We want compose different actions with this reading action, so we don't want to give a callback to it now, instead we save this action in a new `Action`:
+But we don't give a callback to it right now, instead we save this read action in a new `Action`:
 
 ```js
 var Action = function Action(action1) {
@@ -23,7 +23,9 @@ var readFileAction = new Action(
     }
 );
 ```
-Ok, now we must have a method to extract the action from our `readFileAction`, instead use `readFileAction.action` directly, we write a function to accpet a callback, and pass this callback to the action inside our `readFileAction`:
+
+Ok, now we must have a way to extract the action from our `readFileAction`, instead of using `readFileAction.action` directly, we write a function to accpet a callback, and pass this callback to the action inside our `readFileAction`:
+
 ```js
 Action.prototype._go = function(cb) {
     return this.action(cb);
@@ -32,15 +34,19 @@ readFileAction._go(function(data){
     console.log(data);
 })
 ```
+
 You should understand what above `_go` does is equivalent to following:
+
 ```js
 readFile("data.txt", function(data){
     console.log(data);
 });
 ```
-Just with one different, we seperate action creation(wrap `readFile` in `new Action`) and application(use `_go` to supply a callback), in fact we have successfully did a [CPS transformation](https://en.wikipedia.org/wiki/Continuation-passing_style), we will talk about that later.
 
-Now we want to chain callbacks in Promise `then` style:
+Just with one difference, we seperate action creation(wrap `readFile` in `new Action`) and application(use `_go` to supply a callback), in fact we have successfully did a [CPS transformation](https://en.wikipedia.org/wiki/Continuation-passing_style), we will talk about that later.
+
+Now we want to chain more callbacks in Promise `then` style:
+
 ```js
 Action.prototype._next = function(cb) {
     var self = this;
@@ -52,10 +58,14 @@ Action.prototype._next = function(cb) {
     });
 };
 ```
-Let's break down a little here:
 
-+ `_next` should accept a callback `cb`, and return a new `Action`.
-+ When the new `Action` fired, the original `Action`'s action should be fired first, and send the value to `cb`.
+Let's break down `_next` a little here:
+
++ `_next` accept a callback `cb`, and return a new `Action`.
+
++ When the new `Action` fired, the original `Action`'s action will be fired first, and send the value to `cb`.
+
++ we save the `_data` produced by `cb`, and wait for a future `_cb`.
 
 With our `_next`, we can chain multiply callbacks and pass data between them:
 
@@ -77,7 +87,8 @@ readFileAction
 })
 ```
 
-Nice, we just use two simple functions, and the callbacks can be written in a more readable way, but we have a very important problem to be solve yet: what if we want nest async `Action`s inside an `Action`, it turn out with an adjusted `_next` function, we can handle that:
+Nice, we just use two very simple functions, and the callbacks are now written in a much more readable way, but we have a very important problem to be solve yet: what if we want to nest async `Action`s inside an `Action`, it turn out with an adjusted `_next` function, we can handle that:
+
 
 ```js
 Action.prototype._next = function(cb) {
@@ -94,6 +105,7 @@ Action.prototype._next = function(cb) {
     });
 };
 ```
+
 We use `instanceof Action` to check if a callback returns a `Action` or not, if an `Action` is returned, we fire it with callbacks in future:
 
 ```js
@@ -109,8 +121,10 @@ readFileAction
     console.log(data)
 })
 ```
-Now we can say we have solved the callback hell problem! well, actually just 50% of it.
-One important thing to remember: **an `Action` is not happening if you don't fire it, and it can be fired multiple times, it's just a reference to a wrapped function**:
+
+Now we can say we have solved the callback hell problem! Well, actually just 50% of it.
+Before we proceed another 50%, one important thing to keep in mind: **an `Action` is not a promise, it will not happen if you don't fire it, and it can be fired multiple times, it's just a reference to a wrapped function**:
+
 ```js
 readFileAction
 ._next(processOne)
@@ -125,17 +139,18 @@ readFileAction
 ._go(console.log)
 ```
 
-We'll present `freeze` to fire an `Action` immediately, now let's face another 50% of the callback hell issue.
+Later we'll present `Action.freeze` to fire an `Action` immediately, now let's face another 50% of the callback hell issue.
 
 Error handling
 --------------
 
-One biggest issue with `Promise` is the error handleing is somewhat magic and complex:
+One biggest issue with `Promise` is that error handleing is somewhat magic and complex:
 
 + It will eat your error sliently if you don't supply a `catch` at the end of the chain.
-+ You have to use two different functions, `resolve` to pass value to the callbacks and `reject` to skip them, what about `throw` an `Error`?
 
-What we can do to make it simpler? Well, it's a complex problem, so we start solving it by simplify it: **We use `Error` type as a special type to pass error information to the downstream**, what does this mean?
++ You have to use two different functions, `resolve` to pass value to the callbacks and `reject` to skip them, what will happen if you `throw` an `Error`, well, just the same as `reject`
+
+What we can do to make it simpler? It's a complex problem, so we start solving it by simplify it: **We use `Error` type as a special type to pass error information to the downstream**, what does this mean?
 
 ```js
 Action.prototype.next = function(cb) {
@@ -181,11 +196,11 @@ Action.prototype.guard = function(cb) {
 };
 ```
 
-This time, we know the `cb` that `guard` received are prepared for `Error` values, so when we flip the logic.
+This time, we know the `cb` that `guard` received are prepared for `Error` values, so we flip the logic.
 
 Following code demonstrate how to use our `next` and `guard`:
 
-```
+```js
 new Action(function(cb){
     readFile('fileA', function(err, data){
         if (err){
@@ -257,8 +272,10 @@ Action.prototype.go = function(cb) {
 };
 
 ```
+
 Now if user don't guard `Error`s, we will yell at them when `Error` occurs!
-```
+
+```js
 new Action(function(cb){
     readFile('fileA', function(err, data){
         if (err){
@@ -277,7 +294,8 @@ new Action(function(cb){
 Finally, to ease error management, and to attack the [v8 optimization problems](https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#2-unsupported-syntax). We recommand use `Action.safe`:
 
 ```js
-// this small function minimize v8 try-catch overhead, and make attaching custom Error easy
+// this small function minimize v8 try-catch overhead
+// and make attaching custom Error easy
 Action.safe = function(err, fn) {
     return function(data) {
         try {
@@ -288,8 +306,10 @@ Action.safe = function(err, fn) {
     };
 };
 ```
-And use `safe` wrap your `someProcessMayWentWrong`:
-```
+
+And use `safe` wrap your `someProcessMayWentWrong` like this:
+
+```js
 var safe = Action.safe;
 new Action(function(cb){
     readFile('fileA', function(err, data){
@@ -318,4 +338,4 @@ new Action(function(cb){
 
 ```
 
-That's all core functions of `Action` is going to give you.
+That's all core functions of `Action` is going to give you, hope you enjoy my solution :) Check [API doc]() for more interesting things like `Action.parallel`, `Action.race`, `Action.sequence` , `Action.retry` and more!
