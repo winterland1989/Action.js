@@ -302,12 +302,14 @@
     }
   };
 
-  Action.makeNodeAction = function(nodeAPI, arg) {
-    return new Action(function(cb) {
-      return nodeAPI(arg, function(err, data) {
-        return cb(err ? err : data);
+  Action.makeNodeAction = function(nodeAPI) {
+    return function(arg) {
+      return new Action(function(cb) {
+        return nodeAPI(arg, function(err, data) {
+          return cb(err ? err : data);
+        });
       });
-    });
+    };
   };
 
   if ((typeof module !== "undefined" && module !== null) && (module.exports != null)) {

@@ -179,7 +179,7 @@ Action.sequence = (actions, stopAtError = false) ->
     else Action.wrap results
 
 # make an Action from a node style function
-Action.makeNodeAction = (nodeAPI, arg) ->
+Action.makeNodeAction = (nodeAPI) -> (arg) ->
     new Action (cb) ->
         nodeAPI arg, (err, data) ->
             cb if err then err else data
