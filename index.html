@@ -4,44 +4,39 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
     <title>Action.js by winterland1989</title>
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/github-dark.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-    <script src="javascripts/respond.js"></script>
-    <!--[if lt IE 9]>
-      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-    <!--[if lt IE 8]>
-    <link rel="stylesheet" href="stylesheets/ie.css">
-    <![endif]-->
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
   </head>
   <body>
-      <div id="header">
-        <nav>
-          <li class="fork"><a href="https://github.com/winterland1989/Action.js">View On GitHub</a></li>
-          <li class="downloads"><a href="https://github.com/winterland1989/Action.js/zipball/master">ZIP</a></li>
-          <li class="downloads"><a href="https://github.com/winterland1989/Action.js/tarball/master">TAR</a></li>
-          <li class="title">DOWNLOADS</li>
-        </nav>
-      </div><!-- end header -->
-
     <div class="wrapper">
+      <header>
+        <h1>Action.js</h1>
+        <p>A sane way to write async code</p>
 
+        <p class="view"><a href="https://github.com/winterland1989/Action.js">View the Project on GitHub <small>winterland1989/Action.js</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/winterland1989/Action.js/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/winterland1989/Action.js/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/winterland1989/Action.js">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
       <section>
-        <div id="title">
-          <h1>Action.js</h1>
-          <p>A sane way to write async code</p>
-          <hr>
-          <span class="credits left">Project maintained by <a href="https://github.com/winterland1989">winterland1989</a></span>
-          <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
-        </div>
-
         <h1>
 <a id="actionjs-a-sane-way-to-write-async-code" class="anchor" href="#actionjs-a-sane-way-to-write-async-code" aria-hidden="true"><span class="octicon octicon-link"></span></a>Action.js, a sane way to write async code</h1>
 
-<p>Action.js offer a <a href="https://github.com/winterland1989/Action.js/wiki/Benchmark">faster</a> and simpler(~200LOC) alternative to <a href="http://promisesaplus.com">Promise</a>, got 5 minutes?</p>
+<ul>
+<li><a href="#FAQ">FAQ</a></li>
+<li><a href="https://github.com/winterland1989/Action.js/wiki/API-document">API document</a></li>
+</ul>
+
+<p>Action.js offer a <a href="https://github.com/winterland1989/Action.js/wiki/Benchmark">faster</a> and simpler(~200LOC, 7.7kB w/o minified, ~1kB minified gzippe) alternative to <a href="https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise">Promise</a>, got 5 minutes?</p>
 
 <h2>
 <a id="understand-actionjs-in-5-minutes" class="anchor" href="#understand-actionjs-in-5-minutes" aria-hidden="true"><span class="octicon octicon-link"></span></a>Understand Action.js in 5 minutes</h2>
@@ -110,8 +105,11 @@ readFileAction._go(<span class="pl-k">function</span>(<span class="pl-smi">data<
 
 <ul>
 <li><p><code>_next</code> accept a callback <code>cb</code>, and return a new <code>Action</code>.</p></li>
-<li><p>When the new <code>Action</code> fired, the original <code>Action</code>'s action will be fired first, and send the value to <code>cb</code>.</p></li>
-<li><p>we save the <code>_data</code> produced by <code>cb</code>, and wait for a future <code>_cb</code>.</p></li>
+<li><p>When the new <code>Action</code> fired with <code>_cb</code>, the original <code>Action</code>'s action will be fired first, and send the value to <code>cb</code>.</p></li>
+<li><p>We apply <code>cb</code> with <code>data</code> from the original <code>Action</code></p></li>
+<li><p>Then we send the <code>_data</code> produced by <code>cb(data)</code> to <code>_cb</code>.</p></li>
+<li><p>The order is (original <code>Action</code>'s action) --&gt; (<code>cb</code> which <code>next</code> received) --&gt; (<code>_cb</code> we give to our new <code>Action</code>).</p></li>
+<li><p>Since we haven't fired our new <code>Action</code> yet, we haven't send the <code>_cb</code>, the whole callback chain is saved in our new <code>Action</code>.</p></li>
 </ul>
 
 <p>With our <code>_next</code>, we can chain multiply callbacks and pass data between them:</p>
@@ -132,7 +130,7 @@ readFileAction._go(<span class="pl-k">function</span>(<span class="pl-smi">data<
     }
 })</pre></div>
 
-<p>If we want to present it with diagram, it should look like this:</p>
+<p>Let's present it in a heap diagram:</p>
 
 <pre><code>+----------------+----------+
 | ActionTwo      | .action  | 
@@ -201,7 +199,7 @@ readFileAction._go(<span class="pl-k">function</span>(<span class="pl-smi">data<
     });
 };</pre></div>
 
-<p>We use <code>instanceof Action</code> to check if a callback returns a <code>Action</code> or not, if an <code>Action</code> is returned, we fire it with callbacks in future:</p>
+<p>We use <code>instanceof Action</code> to check if a callback returns a <code>Action</code> or not, if an <code>Action</code> is returned, we fire it with <code>_cb</code> when we got <code>_cb</code>:</p>
 
 <div class="highlight highlight-source-js"><pre>readFileAction
 ._next(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
@@ -343,7 +341,14 @@ readFileAction
 });
 </pre></div>
 
-<p>Yeah, it does work(and sometimes very useful), but we don't want to force our user to write like above, and we should throw <code>Error</code> in case user didn't <code>guard</code> them, so here let me present the final version of <code>go</code>:</p>
+<p>Yeah, it does work(and sometimes you want it work in this way), but:</p>
+
+<ul>
+<li><p>we don't want to force our user to supply a <code>cb</code> like above</p></li>
+<li><p>we should throw <code>Error</code> in case user didn't <code>guard</code> them</p></li>
+</ul>
+
+<p>So here let me present the final version of <code>go</code>:</p>
 
 <div class="highlight highlight-source-js"><pre><span class="pl-c1">Action</span>.<span class="pl-c1">prototype</span>.<span class="pl-en">go</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">cb</span>) {
     <span class="pl-k">return</span> <span class="pl-v">this</span>.<span class="pl-c1">action</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
@@ -372,7 +377,7 @@ readFileAction
 .<span class="pl-c1">go</span>() <span class="pl-c">// The Error will be throw!</span>
 </pre></div>
 
-<p>Finally, to ease error management, and to attack the <a href="https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#2-unsupported-syntax">v8 optimization problems</a>. We recommand use <code>Action.safe</code>:</p>
+<p>Finally, to ease error management, and to attack the <a href="https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#2-unsupported-syntax">v8 optimization problems</a>. We recommand using <code>Action.safe</code>:</p>
 
 <div class="highlight highlight-source-js"><pre><span class="pl-c">// this small function minimize v8 try-catch overhead</span>
 <span class="pl-c">// and make attaching custom Error easy</span>
@@ -416,10 +421,16 @@ readFileAction
 .<span class="pl-c1">go</span>()
 </pre></div>
 
-<p>That's all core functions of <code>Action</code> is going to give you, hope you enjoy my solution :), Check <a href="https://github.com/winterland1989/Action.js/wiki/API-document">API doc</a> for more interesting things like <code>Action.parallel</code>, <code>Action.race</code>, <code>Action.sequence</code> and <code>Action.retry</code>, It's also highly recommend to read <a href="https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise">Difference from Promise</a> to get a deeper understanding.</p>
+<p>That's all core functions of <code>Action</code> is going to give you, thank you for reading, how long does it you? hope you enjoy my solution :)</p>
+
+<ul>
+<li><p>Check <a href="https://github.com/winterland1989/Action.js/wiki/API-document">API doc</a> for interesting things like <code>Action.parallel</code>, <code>Action.race</code>, <code>Action.sequence</code> and <code>Action.retry</code></p></li>
+<li><p>Read <a href="https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise">Difference from Promise</a> to get a deeper understanding.</p></li>
+</ul>
 
 <h1>
-<a id="faq" class="anchor" href="#faq" aria-hidden="true"><span class="octicon octicon-link"></span></a>FAQ</h1>
+<a id="faq" class="anchor" href="#faq" aria-hidden="true"><span class="octicon octicon-link"></span></a>FAQ<a name="FAQ"></a>
+</h1>
 
 <h2>
 <a id="why-you-claim-action-are-faster-than-promise" class="anchor" href="#why-you-claim-action-are-faster-than-promise" aria-hidden="true"><span class="octicon octicon-link"></span></a>Why you claim <code>Action</code> are faster than <code>Promise</code>?</h2>
@@ -469,12 +480,13 @@ fileA
 <p>I actually can add generator support with something like <code>Action.async</code>, but i guess <code>Action</code> will never be part of the language, so i didn't, and i can see future will be full of <code>async</code> functions all over the place, use this library if you:</p>
 
 <ul>
-<li>Have a FP background(can't you see all i have done is porting the <code>Cont</code> monad from Haskell?)</li>
-<li>Want raw speed, <code>Action.js</code> guarantee speed close to handroll callbacks, just much cleaner.</li>
-<li>Want different sementics, with <code>Promise</code>, you just can't reuse your callback chain, we have to create a new <code>Promise</code>, with <code>Action</code>, just <code>go</code> again, never waste memory on GC. </li>
+<li><p>Have a FP background, you must find all i have done is porting the <code>Cont</code> monad from Haskell, and i believe you have divide your program into many composable functions already, just connect them with <code>next</code>.</p></li>
+<li><p>Want something small and memory effient in browser.</p></li>
+<li><p>Want raw speed, <code>Action.js</code> guarantee speed close to handroll callbacks, just much cleaner, easier.</p></li>
+<li><p>Want a different sementics, with <code>Promise</code>, you just can't reuse your callback chain, we have to create a new <code>Promise</code>, with <code>Action</code>, just <code>go</code> again, never waste memory on GC. </p></li>
 </ul>
 
-<p>Consider following code:</p>
+<p>Consider following code, and try to rewrite it with <code>Promise</code>:</p>
 
 <div class="highlight highlight-source-js"><pre><span class="pl-c1">Action</span>.<span class="pl-en">retry</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">times</span>, <span class="pl-smi">action</span>) {
     <span class="pl-k">var</span> a;
@@ -486,12 +498,13 @@ fileA
         }
     });
 };</pre></div>
-
-<p><code>Action.js</code> let you do <a href="https://www.haskell.org/haskellwiki/Recursion_in_a_monad">monadic recursion</a>, while <code>Promise</code> can't.</p>
       </section>
-
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/winterland1989">winterland1989</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
     </div>
-    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    <script src="javascripts/scale.fix.js"></script>
     
   </body>
 </html>
