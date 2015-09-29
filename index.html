@@ -284,7 +284,7 @@ readFileAction
     });
 };</pre></div>
 
-<p>This time, we know the <code>cb</code> that <code>guard</code> received are prepared for <code>Error</code> values, so we flip the logic.</p>
+<p>This time, we know the <code>cb</code> that <code>guard</code> received are prepared for <code>Error</code> values, so we flip the logic, since it's just a flipped version of <code>next</code>, you can return an <code>Action</code> if your need some async code to deal with the <code>Error</code>.</p>
 
 <p>Following code demonstrate how to use our <code>next</code> and <code>guard</code>:</p>
 
@@ -328,7 +328,7 @@ readFileAction
 
 <p>The final result will be produced by <code>anotherProcess</code> if <code>someProcessMayWentWrong</code> didn't go wrong, or produced by <code>processError</code> otherwise.</p>
 
-<p>You can place <code>guard</code> in the middle of the chain, all <code>Errors</code> before if will be handled by it, and the value it produced, will be passed to the rest of the chain.</p>
+<p>You can place <code>guard</code> in the middle of the chain, all <code>Errors</code> before it will be handled by it, and the value it produced, will be passed to the rest of the chain.</p>
 
 <p>So, what if the use didn't supply a <code>guard</code>? Well, since use have to supply a callback to the <code>_go</code>, they can check if the callback they supplied received an <code>Error</code> or not like this:</p>
 
@@ -343,7 +343,7 @@ readFileAction
 });
 </pre></div>
 
-<p>Yeah, it does work, but we don't want force our user to write like above, and we should throw <code>Error</code> in case user didn't <code>guard</code> them:</p>
+<p>Yeah, it does work(and sometimes very useful), but we don't want to force our user to write like above, and we should throw <code>Error</code> in case user didn't <code>guard</code> them, so here let me present the final version of <code>go</code>:</p>
 
 <div class="highlight highlight-source-js"><pre><span class="pl-c1">Action</span>.<span class="pl-c1">prototype</span>.<span class="pl-en">go</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">cb</span>) {
     <span class="pl-k">return</span> <span class="pl-v">this</span>.<span class="pl-c1">action</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
@@ -356,7 +356,7 @@ readFileAction
 };
 </pre></div>
 
-<p>Now if user don't guard <code>Error</code>s, we will yell at them when <code>Error</code> occurs!</p>
+<p>Now user can omit the callback, and if user don't guard <code>Error</code>s, we will yell at them when <code>Error</code> occurs!</p>
 
 <div class="highlight highlight-source-js"><pre><span class="pl-k">new</span> <span class="pl-en">Action</span>(<span class="pl-k">function</span>(<span class="pl-smi">cb</span>){
     readFile(<span class="pl-s"><span class="pl-pds">'</span>fileA<span class="pl-pds">'</span></span>, <span class="pl-k">function</span>(<span class="pl-smi">err</span>, <span class="pl-smi">data</span>){
@@ -381,7 +381,7 @@ readFileAction
         <span class="pl-k">try</span> {
             <span class="pl-k">return</span> fn(data);
         } <span class="pl-k">catch</span> (_error) {
-            <span class="pl-k">return</span> _error;
+            <span class="pl-k">return</span> err;
         }
     };
 };</pre></div>
@@ -400,7 +400,8 @@ readFileAction
     });
 })
 .<span class="pl-c1">next</span>(
-    safe(<span class="pl-k">new</span> <span class="pl-en">Error</span>(<span class="pl-s"><span class="pl-pds">"</span>PROCESS_ERROR_XXX: process xxx failed when xxx<span class="pl-pds">"</span></span>), someProcessMayWentWrong)
+    safe( <span class="pl-k">new</span> <span class="pl-en">Error</span>(<span class="pl-s"><span class="pl-pds">"</span>PROCESS_ERROR_XXX: process xxx failed when xxx<span class="pl-pds">"</span></span>)
+        , someProcessMayWentWrong)
 )
 .<span class="pl-c1">next</span>(...)
 .<span class="pl-c1">next</span>(...)
@@ -416,6 +417,75 @@ readFileAction
 </pre></div>
 
 <p>That's all core functions of <code>Action</code> is going to give you, hope you enjoy my solution :), Check <a href="https://github.com/winterland1989/Action.js/wiki/API-document">API doc</a> for more interesting things like <code>Action.parallel</code>, <code>Action.race</code>, <code>Action.sequence</code> and <code>Action.retry</code>, It's also highly recommend to read <a href="https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise">Difference from Promise</a> to get a deeper understanding.</p>
+
+<h1>
+<a id="faq" class="anchor" href="#faq" aria-hidden="true"><span class="octicon octicon-link"></span></a>FAQ</h1>
+
+<h2>
+<a id="why-you-claim-action-are-faster-than-promise" class="anchor" href="#why-you-claim-action-are-faster-than-promise" aria-hidden="true"><span class="octicon octicon-link"></span></a>Why you claim <code>Action</code> are faster than <code>Promise</code>?</h2>
+
+<p>Because it simply do less work:</p>
+
+<ul>
+<li>It doesn't maintain a internal state</li>
+<li>It just have a single field</li>
+<li>It just add a redirect call to original callback, and some type checking</li>
+</ul>
+
+<p>I even be amazed it can achieve so much functionality with such short code myself, see <a href="https://github.com/winterland1989/Action.js/wiki/Benchmark">Benchmark</a> youself.</p>
+
+<h2>
+<a id="why-following-code-doesnt-work" class="anchor" href="#why-following-code-doesnt-work" aria-hidden="true"><span class="octicon octicon-link"></span></a>Why following code doesn't work?</h2>
+
+<div class="highlight highlight-source-js"><pre><span class="pl-k">var</span> fileA <span class="pl-k">=</span> readFileAction
+.<span class="pl-c1">go</span>(processOne)
+
+fileA
+.<span class="pl-c1">next</span>(processTwo)
+.<span class="pl-c1">go</span>()</pre></div>
+
+<p>Well, read <a href="https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise">Difference from Promise</a> to get a detailed answer, tl,dr... here is the short answer:</p>
+
+<div class="highlight highlight-source-js"><pre><span class="pl-c">// readFile now and return a Action, this function won't block</span>
+<span class="pl-k">var</span> fileA <span class="pl-k">=</span> Action.freeze(readFileAction.<span class="pl-c1">next</span>(processOne))
+
+<span class="pl-c">// now fileA will always have the same content and file will never be read again.</span>
+fileA
+.<span class="pl-c1">next</span>(processTwo)
+.<span class="pl-c1">go</span>()
+
+<span class="pl-c">// processTwo will receive the same content</span>
+fileA
+.<span class="pl-c1">next</span>(processTwo)
+.<span class="pl-c1">go</span>()</pre></div>
+
+<p>If you want have a Promise behavior(fire and memorize), use <code>Action.freeze</code>, <code>go</code> won't return a new <code>Action</code>.</p>
+
+<h2>
+<a id="when-to-use-this-library" class="anchor" href="#when-to-use-this-library" aria-hidden="true"><span class="octicon octicon-link"></span></a>When to use this library?</h2>
+
+<p>With <code>Promise</code> added to ES6 and ES7 <code>async/await</code> proposal, you muse ask, why another library to the same trick again?, well, i can add generator support myself with something like <code>Action.async</code>, but i guess <code>Action</code> will never be part of the language, so i didn't, and i can see future will be full of <code>async</code> functions all over the place, so use this library if you:</p>
+
+<ul>
+<li>Have a FP background(can't you see all i have done is porting the <code>Cont</code> monad from Haskell?)</li>
+<li>Want raw speed, <code>Action.js</code> guarantee speed close to handroll callbacks, just much cleaner.</li>
+<li>Want different sementics, with <code>Promise</code>, you just can't reuse your callback chain, we have to create a new <code>Promise</code>, with <code>Action</code>, just <code>go</code> again. </li>
+</ul>
+
+<p>Consider following code:</p>
+
+<div class="highlight highlight-source-js"><pre><span class="pl-c1">Action</span>.<span class="pl-en">retry</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">times</span>, <span class="pl-smi">action</span>) {
+    <span class="pl-k">var</span> a;
+    <span class="pl-k">return</span> a <span class="pl-k">=</span> action.guard(<span class="pl-k">function</span>(<span class="pl-smi">e</span>) {
+        <span class="pl-k">if</span> (times<span class="pl-k">--</span> <span class="pl-k">!==</span> <span class="pl-c1">0</span>) {
+            <span class="pl-k">return</span> a;
+        } <span class="pl-k">else</span> {
+            <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-en">Error</span>(<span class="pl-s"><span class="pl-pds">'</span>RETRY_ERROR: Retry limit reached<span class="pl-pds">'</span></span>);
+        }
+    });
+};</pre></div>
+
+<p><code>Action.js</code> let you do <a href="https://www.haskell.org/haskellwiki/Recursion_in_a_monad">monadic recursion</a>, while <code>Promise</code> can't.</p>
       </section>
 
     </div>
