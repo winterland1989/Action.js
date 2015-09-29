@@ -452,11 +452,13 @@ If you want have a Promise behavior(fire and memorize), use `Action.freeze`, `go
 When to use this library?
 -------------------------
 
-With `Promise` added to ES6 and ES7 `async/await` proposal, you muse ask, why another library to the same trick again?, well, i can add generator support myself with something like `Action.async`, but i guess `Action` will never be part of the language, so i didn't, and i can see future will be full of `async` functions all over the place, so use this library if you:
+With `Promise` added to ES6 and ES7 `async/await` proposal, you must ask, why another library to do the same things again?
+
+I actually can add generator support with something like `Action.async`, but i guess `Action` will never be part of the language, so i didn't, and i can see future will be full of `async` functions all over the place, use this library if you:
 
 + Have a FP background(can't you see all i have done is porting the `Cont` monad from Haskell?)
 + Want raw speed, `Action.js` guarantee speed close to handroll callbacks, just much cleaner.
-+ Want different sementics, with `Promise`, you just can't reuse your callback chain, we have to create a new `Promise`, with `Action`, just `go` again. 
++ Want different sementics, with `Promise`, you just can't reuse your callback chain, we have to create a new `Promise`, with `Action`, just `go` again, never waste memory on GC. 
 
 Consider following code:
 
