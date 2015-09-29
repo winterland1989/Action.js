@@ -425,8 +425,8 @@ That's all core functions of `Action` is going to give you, thank you for readin
 
 + Read [Difference from Promise](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise) to get a deeper understanding.
 
-[FAQ](#FAQ)
-===========
+[FAQ]<a name="FAQ"></a>
+=======================
 
 Why you claim `Action` are faster than `Promise`?
 -------------------------------------------------
