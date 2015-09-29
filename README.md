@@ -220,9 +220,9 @@ One biggest issue with `Promise` is that error handleing is somewhat magic and c
 
 + It will eat your error sliently if you don't supply a `catch` at the end of the chain.
 
-+ You have to use two different functions, `resolve` to pass value to the callbacks and `reject` to skip them, what will happen if you `throw` an `Error`, well, just the same as `reject`
++ You have to use two different functions, `resolve` to pass value to the callbacks and `reject` to skip them, what will happen if you `throw` an `Error`, well, just the same as `reject`.
 
-What we can do to make it simpler? It's a complex problem, so we start solving it by simplify it: **We use `Error` type as a special type to pass error information to the downstream**, what does this mean?
+What we can do to make it simpler? It's a complex problem, we start solving it by simplify it: **Action.js use `Error` type as a special type to pass error information to the downstream**, what does this mean?
 
 ```js
 Action.prototype.next = function(cb) {
@@ -244,9 +244,15 @@ Action.prototype.next = function(cb) {
 };
 ```
 
-Here, let me present the final version of our `next` function, comparing to `_next` we write before, can you see what's the different? It still reture a new `Action`, when it fired, the original action are called, and we checked if the data are `instanceof Error`, if it's not, everything as usual, we feed it to `cb` that `next` received, but if it's an `Error`, we pass it to a future `_cb`, which we don't have now.
+Here, let me present the final version of our `next` function, comparing to `_next` we write before, can you see what's the different? 
 
-Symmetrically, we have to define a function that special deal with `Errors`, and let normal values pass:
++ It still reture a new `Action`, when it fired, the original action are called.
+
++ We checked if the data are `instanceof Error`, if it's not, everything as usual, we feed it to `cb` that `next` received.
+
++ But if it's an `Error`, we pass it to a future `_cb`, which we don't have now.
+
+`next` ensure the `cb` it received, **will never receive an `Error`**, we just skip `cb` and pass `Error` downstream, Symmetrically, we define a function which only deal with `Error`, and let normal values pass:
 
 ```js
 Action.prototype.guard = function(cb) {
@@ -268,7 +274,7 @@ Action.prototype.guard = function(cb) {
 };
 ```
 
-This time, we know the `cb` that `guard` received are prepared for `Error` values, so we flip the logic, since it's just a flipped version of `next`, you can return an `Action` if your need some async code to deal with the `Error`.
+This time, we know the `cb` that `guard` received are prepared for `Error` values, so we flip the logic, you can also return an `Action` if your need some async code to deal with the `Error`.
 
 Following code demonstrate how to use our `next` and `guard`:
 
@@ -276,7 +282,8 @@ Following code demonstrate how to use our `next` and `guard`:
 new Action(function(cb){
     readFile('fileA', function(err, data){
         if (err){
-            // see how to pass an Error to downstream, not reject, not throw, just return
+            // see how to pass an Error to downstream
+            // not reject, not throw, just pass it on, let it go
             cb(err);
         }else{
 
@@ -296,12 +303,12 @@ new Action(function(cb){
     try{
         return someProcessMayWentWrong(data);
     }catch(e){
-        // same as above, we return the error
+        // same as above, we return the error to pass it on
         return e;
     }
 }))
 .next(function(data){
-    // This process will be skip if previous step pass an Error
+    // This process will be skip if previous steps pass an Error
     return anotherProcess(data);
 })
 .guard(function(e){
@@ -312,11 +319,11 @@ new Action(function(cb){
 
 ```
 
-The final result will be produced by `anotherProcess` if `someProcessMayWentWrong` didn't go wrong, or produced by `processError` otherwise.
+The final result will be produced by `anotherProcess` if `someProcessMayWentWrong` didn't go wrong or `readFile` failed, otherwise it will be produced by `processError`.
 
-You can place `guard` in the middle of the chain, all `Errors` before it will be handled by it, and the value it produced, will be passed to the rest of the chain.
+You can place `guard` in the middle of the chain, all `Errors` before it will be handled by it, and the value it produced, sync or async, will be passed to the rest of the chain.
 
-So, what if the use didn't supply a `guard`? Well, since use have to supply a callback to the `_go`, they can check if the callback they supplied received an `Error` or not like this:
+So, what if we don't supply a `guard`? Since we have to supply a callback to the `_go`, we can check if the callback we supplied received an `Error` or not like this:
 
 ```js
 apiReturnAction('...')._go(function(data){
@@ -333,9 +340,9 @@ apiReturnAction('...')._go(function(data){
 
 Yeah, it does work(and sometimes you want it work in this way), but:
 
-+ we don't want to force our user to supply a `cb` like above
++ we don't want to force our user to supply a `cb` like above.
 
-+ we should throw `Error` in case user didn't `guard` them
++ we should throw `Error` in case user didn't `guard` them.
 
 So here let me present the final version of `go`:
 
@@ -433,9 +440,11 @@ Why you claim `Action` are faster than `Promise`?
 
 Because it simply do less work:
 
-+ It doesn't maintain a internal state
-+ It just have a single field
-+ It just add a redirect call to original callback, and some type checking
++ It doesn't maintain a internal state.
+
++ It just have a single field.
+
++ It just add a redirect call to original callback, and some type checking.
 
 I even be amazed it can achieve so much functionality with such short code myself, see [Benchmark](https://github.com/winterland1989/Action.js/wiki/Benchmark) youself.
 
@@ -499,3 +508,8 @@ Action.retry = function(times, action) {
     });
 };
 ```
+
+How can i send an `Error` to downstream as normal value?
+--------------------------------------------------------
+
+No, you can't, you have to wrap it in a `Array` or `Object` or `Map`...whatever, the choice of using `Error` to skip `next` and hit `guard` is not arbitrary, instead of creating an `ActionError` class, use `Error` unify type with system runtime, and providing callstack information.
