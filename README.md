@@ -1,7 +1,7 @@
 Action.js, a sane way to write async code
 =========================================
 
-Action.js offer a [faster](https://github.com/winterland1989/Action.js/wiki/Benchmark) and [simpler](~200LOC) alternative to [Promise](http://promisesaplus.com), got 5 minutes?
+Action.js offer a [faster](https://github.com/winterland1989/Action.js/wiki/Benchmark) and simpler(~200LOC) alternative to [Promise](http://promisesaplus.com), got 5 minutes?
 
 Understand Action.js in 5 minutes
 ---------------------------------
