@@ -1,7 +1,10 @@
 Action.js, a sane way to write async code
 =========================================
 
-Action.js offer a [faster](https://github.com/winterland1989/Action.js/wiki/Benchmark) and simpler(~200LOC) alternative to [Promise](http://promisesaplus.com), got 5 minutes?
++ [FAQ](#FAQ)
++ [API document](https://github.com/winterland1989/Action.js/wiki/API-document)
+
+Action.js offer a [faster](https://github.com/winterland1989/Action.js/wiki/Benchmark) and simpler(~200LOC, 7.7kB w/o minified, ~1kB minified gzippe) alternative to [Promise](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise), got 5 minutes?
 
 Understand Action.js in 5 minutes
 ---------------------------------
@@ -75,9 +78,15 @@ Let's break down `_next` a little here:
 
 + `_next` accept a callback `cb`, and return a new `Action`.
 
-+ When the new `Action` fired, the original `Action`'s action will be fired first, and send the value to `cb`.
++ When the new `Action` fired with `_cb`, the original `Action`'s action will be fired first, and send the value to `cb`.
 
-+ we save the `_data` produced by `cb`, and wait for a future `_cb`.
++ We apply `cb` with `data` from the original `Action`
+
++ Then we send the `_data` produced by `cb(data)` to `_cb`.
+
++ The order is (original `Action`'s action) --> (`cb` which `next` received) --> (`_cb` we give to our new `Action`).
+
++ Since we haven't fired our new `Action` yet, we haven't send the `_cb`, the whole callback chain is saved in our new `Action`.
 
 With our `_next`, we can chain multiply callbacks and pass data between them:
 
@@ -99,7 +108,7 @@ readFileAction
 })
 ```
 
-If we want to present it with diagram, it should look like this:
+Let's present it in a heap diagram:
 
     +----------------+----------+
     | ActionTwo      | .action  | 
@@ -169,7 +178,7 @@ Action.prototype._next = function(cb) {
 };
 ```
 
-We use `instanceof Action` to check if a callback returns a `Action` or not, if an `Action` is returned, we fire it with callbacks in future:
+We use `instanceof Action` to check if a callback returns a `Action` or not, if an `Action` is returned, we fire it with `_cb` when we got `_cb`:
 
 ```js
 readFileAction
@@ -321,7 +330,15 @@ apiReturnAction('...')._go(function(data){
 });
 
 ```
-Yeah, it does work(and sometimes very useful), but we don't want to force our user to write like above, and we should throw `Error` in case user didn't `guard` them, so here let me present the final version of `go`:
+
+Yeah, it does work(and sometimes you want it work in this way), but:
+
++ we don't want to force our user to supply a `cb` like above
+
++ we should throw `Error` in case user didn't `guard` them
+
+So here let me present the final version of `go`:
+
 
 ```js
 Action.prototype.go = function(cb) {
@@ -354,7 +371,7 @@ new Action(function(cb){
 
 ```
 
-Finally, to ease error management, and to attack the [v8 optimization problems](https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#2-unsupported-syntax). We recommand use `Action.safe`:
+Finally, to ease error management, and to attack the [v8 optimization problems](https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#2-unsupported-syntax). We recommand using `Action.safe`:
 
 ```js
 // this small function minimize v8 try-catch overhead
@@ -402,10 +419,14 @@ new Action(function(cb){
 
 ```
 
-That's all core functions of `Action` is going to give you, hope you enjoy my solution :), Check [API doc](https://github.com/winterland1989/Action.js/wiki/API-document) for more interesting things like `Action.parallel`, `Action.race`, `Action.sequence` and `Action.retry`, It's also highly recommend to read [Difference from Promise](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise) to get a deeper understanding.
+That's all core functions of `Action` is going to give you, thank you for reading, how long does it you? hope you enjoy my solution :)
 
-FAQ
-===
++ Check [API doc](https://github.com/winterland1989/Action.js/wiki/API-document) for interesting things like `Action.parallel`, `Action.race`, `Action.sequence` and `Action.retry`
+
++ Read [Difference from Promise](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise) to get a deeper understanding.
+
+[FAQ](#FAQ)
+===========
 
 Why you claim `Action` are faster than `Promise`?
 -------------------------------------------------
@@ -456,11 +477,15 @@ With `Promise` added to ES6 and ES7 `async/await` proposal, you must ask, why an
 
 I actually can add generator support with something like `Action.async`, but i guess `Action` will never be part of the language, so i didn't, and i can see future will be full of `async` functions all over the place, use this library if you:
 
-+ Have a FP background(can't you see all i have done is porting the `Cont` monad from Haskell?)
-+ Want raw speed, `Action.js` guarantee speed close to handroll callbacks, just much cleaner.
-+ Want different sementics, with `Promise`, you just can't reuse your callback chain, we have to create a new `Promise`, with `Action`, just `go` again, never waste memory on GC. 
++ Have a FP background, you must find all i have done is porting the `Cont` monad from Haskell, and i believe you have divide your program into many composable functions already, just connect them with `next`.
 
-Consider following code:
++ Want something small and memory effient in browser.
+
++ Want raw speed, `Action.js` guarantee speed close to handroll callbacks, just much cleaner, easier.
+
++ Want a different sementics, with `Promise`, you just can't reuse your callback chain, we have to create a new `Promise`, with `Action`, just `go` again, never waste memory on GC. 
+
+Consider following code, and try to rewrite it with `Promise`:
 
 ```js
 Action.retry = function(times, action) {
@@ -474,5 +499,3 @@ Action.retry = function(times, action) {
     });
 };
 ```
-
-`Action.js` let you do [monadic recursion](https://www.haskell.org/haskellwiki/Recursion_in_a_monad), while `Promise` can't.
