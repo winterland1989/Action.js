@@ -381,7 +381,7 @@ new Action(function(cb){
         }
     });
 })
-.go() // The Error will be throw!
+.go() // The Error will be thrown!
 
 ```
 
@@ -433,9 +433,9 @@ new Action(function(cb){
 
 ```
 
-That's all core functions of `Action` is going to give you, thank you for reading, how long does it you? hope you enjoy my solution :)
+That's all core functions of `Action` is going to give you, thank you for reading, how long does it take you? hope you enjoy my solution :)
 
-+ Check [API doc](https://github.com/winterland1989/Action.js/wiki/API-document) for interesting things like `Action.parallel`, `Action.race`, `Action.sequence` and `Action.retry`
++ Check [API doc](https://github.com/winterland1989/Action.js/wiki/API-document) for interesting things like `Action.parallel`, `Action.race`, `Action.sequence` and `Action.retry`.
 
 + Read [Difference from Promise](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise) to get a deeper understanding.
 
@@ -445,11 +445,11 @@ FAQ<a name="FAQ"></a>
 Why you claim `Action` are faster than `Promise`?
 -------------------------------------------------
 
-Because it simply do less work:
+Because it simply does less work:
 
-+ It doesn't maintain a internal state.
++ It doesn't maintain any internal state.
 
-+ It just have a single field.
++ It just have a single field, which is a reference to a function.
 
 + It just add a redirect call to original callback, and some type checking.
 
@@ -489,15 +489,15 @@ If you want have a Promise behavior(fire and memorize), use `Action.freeze`, `go
 When to use this library?
 -------------------------
 
-With `Promise` added to ES6 and ES7 `async/await` proposal, you must ask, why another library to do the same things again?
+With `Promise` added to ES6 and ES7 `async/await` proposal, one must ask, why another library to do the same things again?
 
-I actually can add generator support with something like `Action.async`, but i guess `Action` will never be part of the language, so i didn't, and i can see future will be full of `async` functions all over the place, use this library if you:
+I actually can add generator support with something like `Action.async` when ES6 come to most browser, but i can see future will be full of `async` functions all over the place, use this library if you:
 
-+ Have a FP background, you must find all i have done is porting the `Cont` monad from Haskell, and i believe you have divide your program into many composable functions already, just connect them with `next`.
++ Have a FP background, you must find all i have done is porting the `Cont` monad from Haskell, and i believe you have divided your program into many composable functions already, just connect them with `next`.
 
 + Want something small and memory effient in browser.
 
-+ Want raw speed, `Action.js` guarantee speed close to handroll callbacks, just much cleaner, easier.
++ Want raw speed, `Action.js` guarantee speed close to handroll callbacks, just much cleaner.
 
 + Want a different sementics, with `Promise`, you just can't reuse your callback chain, we have to create a new `Promise`, with `Action`, just `go` again, never waste memory on GC. 
 
@@ -516,7 +516,7 @@ Action.retry = function(times, action) {
 };
 ```
 
-How can i send an `Error` to downstream as normal value?
---------------------------------------------------------
+How can i send an `Error` to downstream's `next`
+------------------------------------------------
 
 No, you can't, you have to wrap it in a `Array` or `Object` or `Map`...whatever, the choice of using `Error` to skip `next` and hit `guard` is not arbitrary, instead of creating an `ActionError` class, use `Error` unify type with system runtime, and providing callstack information.
