@@ -442,8 +442,8 @@ That's all core functions of `Action` is going to give you, thank you for readin
 FAQ<a name="FAQ"></a>
 =====================
 
-Why you claim `Action` are faster than `Promise`?
--------------------------------------------------
+What makes `Action` faster than `Promise`?
+------------------------------------------
 
 Because it simply does less work:
 
@@ -497,7 +497,7 @@ I actually can add generator support with something like `Action.async` when ES6
 
 + Want something small and memory effient in browser.
 
-+ Want raw speed, `Action.js` guarantee speed close to handroll callbacks, just much cleaner.
++ Want to control exactly when the action will run, with `Promise`, all action run in next tick, While with `Action`, action runs when you call `go`, `_go` or `Action.freeze`. 
 
 + Want a different sementics, with `Promise`, you just can't reuse your callback chain, we have to create a new `Promise`, with `Action`, just `go` again, never waste memory on GC. 
 
@@ -515,6 +515,8 @@ Action.retry = function(times, action) {
     });
 };
 ```
+
++ Want raw speed, this is somehow not really an issue, most of the time, `Promise` or `Action` won't affect that much, nevertheless, `Action.js` can guarantee speed close to handroll callbacks, just much cleaner.
 
 How can i send an `Error` to downstream's `next`
 ------------------------------------------------
