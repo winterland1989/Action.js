@@ -1,8 +1,9 @@
 Action.js, a sane way to write async code
 =========================================
-
+    
 + [FAQ](#FAQ)
 + [API document](https://github.com/winterland1989/Action.js/wiki/API-document)
++ Usage: `npm i action-js` or `git clone https://github.com/winterland1989/Action.js.git`
 
 Action.js offer a [faster](https://github.com/winterland1989/Action.js/wiki/Benchmark) and simpler(~200LOC, 7.7kB w/o minified, ~1kB minified gzippe) alternative to [Promise](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise), got 5 minutes?
 
@@ -11,9 +12,14 @@ Understand Action.js in 5 minutes
 
 Suppose we want to solve the nest callback problem form scratch, there's an async function called `readFile`, and we want to use it to read `data.txt`, we have to supply a `callback` to it:
 
-    readFile("data.txt", callback)
+```js
+// suppose this simple readFile never fail
+readFile("data.txt", function(data){
+    console.log(data);
+});
+```
 
-Instead we don't give a callback to it right now, we save this read action in a new `Action`:
+Instead we don't give a callback(the `console.log`) to it right now, we save this read action in a new `Action`:
 
 ```js
 var Action = function Action(action1) {
@@ -45,12 +51,13 @@ Ok, now we must have a way to extract the action from our `readFileAction`, inst
 Action.prototype._go = function(cb) {
     return this.action(cb);
 };
+// actually you should write readFileAction._go(console.log)
 readFileAction._go(function(data){
     console.log(data);
 })
 ```
 
-You should understand what above `_go` does is equivalent to following:
+You should understand what above `_go` does is equivalent to what we write at beginning:
 
 ```js
 readFile("data.txt", function(data){
@@ -58,7 +65,7 @@ readFile("data.txt", function(data){
 });
 ```
 
-Just with one difference, we seperate action creation(wrap `readFile` in `new Action`) and application(use `_go` to supply a callback), in fact we have successfully did a [CPS transformation](https://en.wikipedia.org/wiki/Continuation-passing_style), we will talk about that later.
+Just with one difference, we seperate action creation(wrap `readFile` in `new Action`) and application(use `_go` to supply a callback), in fact we have successfully did a [CPS transformation](https://en.wikipedia.org/wiki/Continuation-passing_style), i will talk about that in another article.
 
 Now we want to chain more callbacks in Promise `then` style:
 
@@ -108,7 +115,7 @@ readFileAction
 })
 ```
 
-Let's present it in a heap diagram:
+Let's present it in a diagram:
 
     +----------------+----------+
     | ActionTwo      | .action  | 
@@ -158,9 +165,9 @@ Let's present it in a heap diagram:
                     | readFile("data.txt", cb) |
                     +--------------------------+
 
-`ActionOne` and `ActionTwo` are `Action`s first and second `_next` returned respectively, Now if we give `ActionTwo` a `callback` with `_go`, the whole callback chain will be fired sequential.
+`ActionOne` and `ActionTwo` are `Action`s first and second `_next` returned respectively, Now if we give `ActionTwo` a callback with `_go`, the whole callback chain will be fired sequential.
 
-Nice, we just use a simple class with only one field, two very simple functions, the callbacks are now written in a much more readable way, but we have a key problem to be solved yet: what if we want to nest async `Action`s inside an `Action`, it turn out with an adjusted `_next` function, we can handle that:
+Nice, we just use a simple class with only one field, two very simple functions, the callbacks are now written in a much more readable way, but we have a key problem to be solved yet: what if we want to nest async `Action`s inside an `Action`? Turn out with a little modification to our `_next` function, we can handle that:
 
 ```js
 Action.prototype._next = function(cb) {
@@ -178,7 +185,7 @@ Action.prototype._next = function(cb) {
 };
 ```
 
-We use `instanceof Action` to check if a callback returns a `Action` or not, if an `Action` is returned, we fire it with `_cb` when we got `_cb`:
+We use `instanceof Action` to check if a callback returns an `Action` or not, if an `Action` is returned, we fire it with `_cb`, the callback which our new `Action` will going to receive:
 
 ```js
 readFileAction

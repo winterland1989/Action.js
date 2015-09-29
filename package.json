@@ -1,0 +1,28 @@
+{
+  "name": "action-js",
+  "version": "1.0.0",
+  "description": "a sane way to write async code",
+  "main": "Action.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "coffee test/test.coffee"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/winterland1989/Action.js.git"
+  },
+  "keywords": [
+    "action",
+    "async",
+    "cps",
+    "promise"
+  ],
+  "author": "winterland",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/winterland1989/Action.js/issues"
+  },
+  "homepage": "http://winterland1989.github.io/Action.js"
+}
