@@ -1,16 +1,16 @@
 Action.js, a sane way to write async code
 =========================================
 
-Promise and async/await are all great stuff, but Action.js offer a faster and simpler alternative.
+Action.js offer a [faster](https://github.com/winterland1989/Action.js/wiki/Benchmark) and [simpler](~200LOC) alternative to [Promise](http://promisesaplus.com), got 5 minutes?
 
 Understand Action.js in 5 minutes
 ---------------------------------
 
-Suppose we want to solve the nest callback problem form scratch, we have an async function called `readFile`, and we want to read `data.txt`, we have to supply a `callback` to it:
+Suppose we want to solve the nest callback problem form scratch, there's an async function called `readFile`, and we want to use it to read `data.txt`, we have to supply a `callback` to it:
 
     readFile("data.txt", callback)
 
-But we don't give a callback to it right now, instead we save this read action in a new `Action`:
+Instead we don't give a callback to it right now, we save this read action in a new `Action`:
 
 ```js
 var Action = function Action(action1) {
@@ -23,6 +23,18 @@ var readFileAction = new Action(
     }
 );
 ```
+We have following objects on our heap:
+
+    +----------------+----------+
+    | readFileAction | .action  | 
+    +----------------+----+-----+
+                          |
+                          v
+                    +----------+---------------+
+                    | function | cb            |
+                    +----------+---------------+   
+                    | readFile("data.txt", cb) |
+                    +--------------------------+
 
 Ok, now we must have a way to extract the action from our `readFileAction`, instead of using `readFileAction.action` directly, we write a function to accpet a callback, and pass this callback to the action inside our `readFileAction`:
 
@@ -87,8 +99,59 @@ readFileAction
 })
 ```
 
-Nice, we just use two very simple functions, and the callbacks are now written in a much more readable way, but we have a very important problem to be solve yet: what if we want to nest async `Action`s inside an `Action`, it turn out with an adjusted `_next` function, we can handle that:
+If we want to present it with diagram, it should look like this:
 
+    +----------------+----------+
+    | ActionTwo      | .action  | 
+    +----------------+----+-----+
+                          |
+                          v
+                    +----------+----------------+
+                    | function | cb_            |
+                    +----------+----------------+  
+                    | cb = function(data){      |
+                    |   console.log(data);      |
+                    |   return length > 0       |
+                    | }                         |
+               +--- + ActionOne.action(         |
+               |    |   function(data){         |
+               |    |     cb_(cb(data))         |
+               |    |   });                     | 
+               |    +---------------------------+
+               |                            
+               v       
+    +----------------+----------+            
+    | ActionOne      | .action  | 
+    +----------------+----+-----+
+                          |
+                          v
+                    +----------+----------------+
+                    | function | cb_            |
+                    +----------+----------------+  
+                    | cb = function(data){      |
+                    |   return data.length      |
+                    | }                         |
+               +--- + readFileAction.action(    |
+               |    |   function(data){         |
+               |    |     cb_(cb(data))         |
+               |    |   });                     | 
+               |    +---------------------------+
+               |           
+               v          
+    +----------------+----------+
+    | readFileAction | .action  | 
+    +----------------+----+-----+
+                          |
+                          v
+                    +----------+---------------+
+                    | function | cb            |
+                    +----------+---------------+   
+                    | readFile("data.txt", cb) |
+                    +--------------------------+
+
+`ActionOne` and `ActionTwo` are `Action`s first and second `_next` returned respectively, Now if we give `ActionTwo` a `callback` with `_go`, the whole callback chain will be fired sequential.
+
+Nice, we just use a simple class with only one field, two very simple functions, the callbacks are now written in a much more readable way, but we have a key problem to be solved yet: what if we want to nest async `Action`s inside an `Action`, it turn out with an adjusted `_next` function, we can handle that:
 
 ```js
 Action.prototype._next = function(cb) {
@@ -338,4 +401,4 @@ new Action(function(cb){
 
 ```
 
-That's all core functions of `Action` is going to give you, hope you enjoy my solution :) Check [API doc]() for more interesting things like `Action.parallel`, `Action.race`, `Action.sequence` , `Action.retry` and more!
+That's all core functions of `Action` is going to give you, hope you enjoy my solution :), Check [API doc](https://github.com/winterland1989/Action.js/wiki/API-document) for more interesting things like `Action.parallel`, `Action.race`, `Action.sequence` and `Action.retry`, It's also highly recommend to read [Difference from Promise](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise) to get a deeper understanding.
