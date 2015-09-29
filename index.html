@@ -34,6 +34,8 @@
 <ul>
 <li><a href="#FAQ">FAQ</a></li>
 <li><a href="https://github.com/winterland1989/Action.js/wiki/API-document">API document</a></li>
+<li>Usage: <code>npm i action-js</code> or <code>git clone https://github.com/winterland1989/Action.js.git</code>
+</li>
 </ul>
 
 <p>Action.js offer a <a href="https://github.com/winterland1989/Action.js/wiki/Benchmark">faster</a> and simpler(~200LOC, 7.7kB w/o minified, ~1kB minified gzippe) alternative to <a href="https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise">Promise</a>, got 5 minutes?</p>
@@ -43,10 +45,12 @@
 
 <p>Suppose we want to solve the nest callback problem form scratch, there's an async function called <code>readFile</code>, and we want to use it to read <code>data.txt</code>, we have to supply a <code>callback</code> to it:</p>
 
-<pre><code>readFile("data.txt", callback)
-</code></pre>
+<div class="highlight highlight-source-js"><pre><span class="pl-c">// suppose this simple readFile never fail</span>
+readFile(<span class="pl-s"><span class="pl-pds">"</span>data.txt<span class="pl-pds">"</span></span>, <span class="pl-k">function</span>(<span class="pl-smi">data</span>){
+    <span class="pl-en">console</span>.<span class="pl-c1">log</span>(data);
+});</pre></div>
 
-<p>Instead we don't give a callback to it right now, we save this read action in a new <code>Action</code>:</p>
+<p>Instead we don't give a callback(the <code>console.log</code>) to it right now, we save this read action in a new <code>Action</code>:</p>
 
 <div class="highlight highlight-source-js"><pre><span class="pl-k">var</span> <span class="pl-en">Action</span> <span class="pl-k">=</span> <span class="pl-k">function</span> <span class="pl-en">Action</span>(<span class="pl-smi">action1</span>) {
     <span class="pl-v">this</span>.<span class="pl-c1">action</span> <span class="pl-k">=</span> action1;
@@ -77,17 +81,18 @@
 <div class="highlight highlight-source-js"><pre><span class="pl-c1">Action</span>.<span class="pl-c1">prototype</span>.<span class="pl-en">_go</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">cb</span>) {
     <span class="pl-k">return</span> <span class="pl-v">this</span>.<span class="pl-c1">action</span>(cb);
 };
+<span class="pl-c">// actually you should write readFileAction._go(console.log)</span>
 readFileAction._go(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
     <span class="pl-en">console</span>.<span class="pl-c1">log</span>(data);
 })</pre></div>
 
-<p>You should understand what above <code>_go</code> does is equivalent to following:</p>
+<p>You should understand what above <code>_go</code> does is equivalent to what we write at beginning:</p>
 
 <div class="highlight highlight-source-js"><pre>readFile(<span class="pl-s"><span class="pl-pds">"</span>data.txt<span class="pl-pds">"</span></span>, <span class="pl-k">function</span>(<span class="pl-smi">data</span>){
     <span class="pl-en">console</span>.<span class="pl-c1">log</span>(data);
 });</pre></div>
 
-<p>Just with one difference, we seperate action creation(wrap <code>readFile</code> in <code>new Action</code>) and application(use <code>_go</code> to supply a callback), in fact we have successfully did a <a href="https://en.wikipedia.org/wiki/Continuation-passing_style">CPS transformation</a>, we will talk about that later.</p>
+<p>Just with one difference, we seperate action creation(wrap <code>readFile</code> in <code>new Action</code>) and application(use <code>_go</code> to supply a callback), in fact we have successfully did a <a href="https://en.wikipedia.org/wiki/Continuation-passing_style">CPS transformation</a>, i will talk about that in another article.</p>
 
 <p>Now we want to chain more callbacks in Promise <code>then</code> style:</p>
 
@@ -130,7 +135,7 @@ readFileAction._go(<span class="pl-k">function</span>(<span class="pl-smi">data<
     }
 })</pre></div>
 
-<p>Let's present it in a heap diagram:</p>
+<p>Let's present it in a diagram:</p>
 
 <pre><code>+----------------+----------+
 | ActionTwo      | .action  | 
@@ -181,9 +186,9 @@ readFileAction._go(<span class="pl-k">function</span>(<span class="pl-smi">data<
                 +--------------------------+
 </code></pre>
 
-<p><code>ActionOne</code> and <code>ActionTwo</code> are <code>Action</code>s first and second <code>_next</code> returned respectively, Now if we give <code>ActionTwo</code> a <code>callback</code> with <code>_go</code>, the whole callback chain will be fired sequential.</p>
+<p><code>ActionOne</code> and <code>ActionTwo</code> are <code>Action</code>s first and second <code>_next</code> returned respectively, Now if we give <code>ActionTwo</code> a callback with <code>_go</code>, the whole callback chain will be fired sequential.</p>
 
-<p>Nice, we just use a simple class with only one field, two very simple functions, the callbacks are now written in a much more readable way, but we have a key problem to be solved yet: what if we want to nest async <code>Action</code>s inside an <code>Action</code>, it turn out with an adjusted <code>_next</code> function, we can handle that:</p>
+<p>Nice, we just use a simple class with only one field, two very simple functions, the callbacks are now written in a much more readable way, but we have a key problem to be solved yet: what if we want to nest async <code>Action</code>s inside an <code>Action</code>? Turn out with a little modification to our <code>_next</code> function, we can handle that:</p>
 
 <div class="highlight highlight-source-js"><pre><span class="pl-c1">Action</span>.<span class="pl-c1">prototype</span>.<span class="pl-en">_next</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">cb</span>) {
     <span class="pl-k">var</span> self <span class="pl-k">=</span> <span class="pl-v">this</span>;
@@ -199,7 +204,7 @@ readFileAction._go(<span class="pl-k">function</span>(<span class="pl-smi">data<
     });
 };</pre></div>
 
-<p>We use <code>instanceof Action</code> to check if a callback returns a <code>Action</code> or not, if an <code>Action</code> is returned, we fire it with <code>_cb</code> when we got <code>_cb</code>:</p>
+<p>We use <code>instanceof Action</code> to check if a callback returns an <code>Action</code> or not, if an <code>Action</code> is returned, we fire it with <code>_cb</code>, the callback which our new <code>Action</code> will going to receive:</p>
 
 <div class="highlight highlight-source-js"><pre>readFileAction
 ._next(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
@@ -381,7 +386,7 @@ readFileAction
         }
     });
 })
-.<span class="pl-c1">go</span>() <span class="pl-c">// The Error will be throw!</span>
+.<span class="pl-c1">go</span>() <span class="pl-c">// The Error will be thrown!</span>
 </pre></div>
 
 <p>Finally, to ease error management, and to attack the <a href="https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#2-unsupported-syntax">v8 optimization problems</a>. We recommand using <code>Action.safe</code>:</p>
@@ -428,10 +433,10 @@ readFileAction
 .<span class="pl-c1">go</span>()
 </pre></div>
 
-<p>That's all core functions of <code>Action</code> is going to give you, thank you for reading, how long does it you? hope you enjoy my solution :)</p>
+<p>That's all core functions of <code>Action</code> is going to give you, thank you for reading, how long does it take you? hope you enjoy my solution :)</p>
 
 <ul>
-<li><p>Check <a href="https://github.com/winterland1989/Action.js/wiki/API-document">API doc</a> for interesting things like <code>Action.parallel</code>, <code>Action.race</code>, <code>Action.sequence</code> and <code>Action.retry</code></p></li>
+<li><p>Check <a href="https://github.com/winterland1989/Action.js/wiki/API-document">API doc</a> for interesting things like <code>Action.parallel</code>, <code>Action.race</code>, <code>Action.sequence</code> and <code>Action.retry</code>.</p></li>
 <li><p>Read <a href="https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise">Difference from Promise</a> to get a deeper understanding.</p></li>
 </ul>
 
@@ -440,13 +445,13 @@ readFileAction
 </h1>
 
 <h2>
-<a id="why-you-claim-action-are-faster-than-promise" class="anchor" href="#why-you-claim-action-are-faster-than-promise" aria-hidden="true"><span class="octicon octicon-link"></span></a>Why you claim <code>Action</code> are faster than <code>Promise</code>?</h2>
+<a id="what-makes-action-faster-than-promise" class="anchor" href="#what-makes-action-faster-than-promise" aria-hidden="true"><span class="octicon octicon-link"></span></a>What makes <code>Action</code> faster than <code>Promise</code>?</h2>
 
-<p>Because it simply do less work:</p>
+<p>Because it simply does less work:</p>
 
 <ul>
-<li><p>It doesn't maintain a internal state.</p></li>
-<li><p>It just have a single field.</p></li>
+<li><p>It doesn't maintain any internal state.</p></li>
+<li><p>It just have a single field, which is a reference to a function.</p></li>
 <li><p>It just add a redirect call to original callback, and some type checking.</p></li>
 </ul>
 
@@ -482,14 +487,14 @@ fileA
 <h2>
 <a id="when-to-use-this-library" class="anchor" href="#when-to-use-this-library" aria-hidden="true"><span class="octicon octicon-link"></span></a>When to use this library?</h2>
 
-<p>With <code>Promise</code> added to ES6 and ES7 <code>async/await</code> proposal, you must ask, why another library to do the same things again?</p>
+<p>With <code>Promise</code> added to ES6 and ES7 <code>async/await</code> proposal, one must ask, why another library to do the same things again?</p>
 
-<p>I actually can add generator support with something like <code>Action.async</code>, but i guess <code>Action</code> will never be part of the language, so i didn't, and i can see future will be full of <code>async</code> functions all over the place, use this library if you:</p>
+<p>I actually can add generator support with something like <code>Action.async</code> when ES6 come to most browser, but i can see future will be full of <code>async</code> functions all over the place, use this library if you:</p>
 
 <ul>
-<li><p>Have a FP background, you must find all i have done is porting the <code>Cont</code> monad from Haskell, and i believe you have divide your program into many composable functions already, just connect them with <code>next</code>.</p></li>
+<li><p>Have a FP background, you must find all i have done is porting the <code>Cont</code> monad from Haskell, and i believe you have divided your program into many composable functions already, just connect them with <code>next</code>.</p></li>
 <li><p>Want something small and memory effient in browser.</p></li>
-<li><p>Want raw speed, <code>Action.js</code> guarantee speed close to handroll callbacks, just much cleaner, easier.</p></li>
+<li><p>Want to control exactly when the action will run, with <code>Promise</code>, all action run in next tick, While with <code>Action</code>, action runs when you call <code>go</code>, <code>_go</code> or <code>Action.freeze</code>. </p></li>
 <li><p>Want a different sementics, with <code>Promise</code>, you just can't reuse your callback chain, we have to create a new <code>Promise</code>, with <code>Action</code>, just <code>go</code> again, never waste memory on GC. </p></li>
 </ul>
 
@@ -506,8 +511,13 @@ fileA
     });
 };</pre></div>
 
+<ul>
+<li>Want raw speed, this is somehow not really an issue, most of the time, <code>Promise</code> or <code>Action</code> won't affect that much, nevertheless, <code>Action.js</code> can guarantee speed close to handroll callbacks, just much cleaner.</li>
+</ul>
+
 <h2>
-<a id="how-can-i-send-an-error-to-downstream-as-normal-value" class="anchor" href="#how-can-i-send-an-error-to-downstream-as-normal-value" aria-hidden="true"><span class="octicon octicon-link"></span></a>How can i send an <code>Error</code> to downstream as normal value?</h2>
+<a id="how-can-i-send-an-error-to-downstreams-next" class="anchor" href="#how-can-i-send-an-error-to-downstreams-next" aria-hidden="true"><span class="octicon octicon-link"></span></a>How can i send an <code>Error</code> to downstream's <code>next</code>
+</h2>
 
 <p>No, you can't, you have to wrap it in a <code>Array</code> or <code>Object</code> or <code>Map</code>...whatever, the choice of using <code>Error</code> to skip <code>next</code> and hit <code>guard</code> is not arbitrary, instead of creating an <code>ActionError</code> class, use <code>Error</code> unify type with system runtime, and providing callstack information.</p>
       </section>
