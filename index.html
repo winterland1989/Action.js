@@ -237,10 +237,10 @@ readFileAction
 
 <ul>
 <li><p>It will eat your error sliently if you don't supply a <code>catch</code> at the end of the chain.</p></li>
-<li><p>You have to use two different functions, <code>resolve</code> to pass value to the callbacks and <code>reject</code> to skip them, what will happen if you <code>throw</code> an <code>Error</code>, well, just the same as <code>reject</code></p></li>
+<li><p>You have to use two different functions, <code>resolve</code> to pass value to the callbacks and <code>reject</code> to skip them, what will happen if you <code>throw</code> an <code>Error</code>, well, just the same as <code>reject</code>.</p></li>
 </ul>
 
-<p>What we can do to make it simpler? It's a complex problem, so we start solving it by simplify it: <strong>We use <code>Error</code> type as a special type to pass error information to the downstream</strong>, what does this mean?</p>
+<p>What we can do to make it simpler? It's a complex problem, we start solving it by simplify it: <strong>Action.js use <code>Error</code> type as a special type to pass error information to the downstream</strong>, what does this mean?</p>
 
 <div class="highlight highlight-source-js"><pre><span class="pl-c1">Action</span>.<span class="pl-c1">prototype</span>.<span class="pl-en">next</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">cb</span>) {
     <span class="pl-k">var</span> self <span class="pl-k">=</span> <span class="pl-v">this</span>;
@@ -260,9 +260,15 @@ readFileAction
     });
 };</pre></div>
 
-<p>Here, let me present the final version of our <code>next</code> function, comparing to <code>_next</code> we write before, can you see what's the different? It still reture a new <code>Action</code>, when it fired, the original action are called, and we checked if the data are <code>instanceof Error</code>, if it's not, everything as usual, we feed it to <code>cb</code> that <code>next</code> received, but if it's an <code>Error</code>, we pass it to a future <code>_cb</code>, which we don't have now.</p>
+<p>Here, let me present the final version of our <code>next</code> function, comparing to <code>_next</code> we write before, can you see what's the different? </p>
 
-<p>Symmetrically, we have to define a function that special deal with <code>Errors</code>, and let normal values pass:</p>
+<ul>
+<li><p>It still reture a new <code>Action</code>, when it fired, the original action are called.</p></li>
+<li><p>We checked if the data are <code>instanceof Error</code>, if it's not, everything as usual, we feed it to <code>cb</code> that <code>next</code> received.</p></li>
+<li><p>But if it's an <code>Error</code>, we pass it to a future <code>_cb</code>, which we don't have now.</p></li>
+</ul>
+
+<p><code>next</code> ensure the <code>cb</code> it received, <strong>will never receive an <code>Error</code></strong>, we just skip <code>cb</code> and pass <code>Error</code> downstream, Symmetrically, we define a function which only deal with <code>Error</code>, and let normal values pass:</p>
 
 <div class="highlight highlight-source-js"><pre><span class="pl-c1">Action</span>.<span class="pl-c1">prototype</span>.<span class="pl-en">guard</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">cb</span>) {
     <span class="pl-k">var</span> self <span class="pl-k">=</span> <span class="pl-v">this</span>;
@@ -282,14 +288,15 @@ readFileAction
     });
 };</pre></div>
 
-<p>This time, we know the <code>cb</code> that <code>guard</code> received are prepared for <code>Error</code> values, so we flip the logic, since it's just a flipped version of <code>next</code>, you can return an <code>Action</code> if your need some async code to deal with the <code>Error</code>.</p>
+<p>This time, we know the <code>cb</code> that <code>guard</code> received are prepared for <code>Error</code> values, so we flip the logic, you can also return an <code>Action</code> if your need some async code to deal with the <code>Error</code>.</p>
 
 <p>Following code demonstrate how to use our <code>next</code> and <code>guard</code>:</p>
 
 <div class="highlight highlight-source-js"><pre><span class="pl-k">new</span> <span class="pl-en">Action</span>(<span class="pl-k">function</span>(<span class="pl-smi">cb</span>){
     readFile(<span class="pl-s"><span class="pl-pds">'</span>fileA<span class="pl-pds">'</span></span>, <span class="pl-k">function</span>(<span class="pl-smi">err</span>, <span class="pl-smi">data</span>){
         <span class="pl-k">if</span> (err){
-            <span class="pl-c">// see how to pass an Error to downstream, not reject, not throw, just return</span>
+            <span class="pl-c">// see how to pass an Error to downstream</span>
+            <span class="pl-c">// not reject, not throw, just pass it on, let it go</span>
             cb(err);
         }<span class="pl-k">else</span>{
 
@@ -309,12 +316,12 @@ readFileAction
     <span class="pl-k">try</span>{
         <span class="pl-k">return</span> someProcessMayWentWrong(data);
     }<span class="pl-k">catch</span>(e){
-        <span class="pl-c">// same as above, we return the error</span>
+        <span class="pl-c">// same as above, we return the error to pass it on</span>
         <span class="pl-k">return</span> e;
     }
 }))
 .<span class="pl-c1">next</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
-    <span class="pl-c">// This process will be skip if previous step pass an Error</span>
+    <span class="pl-c">// This process will be skip if previous steps pass an Error</span>
     <span class="pl-k">return</span> anotherProcess(data);
 })
 .guard(<span class="pl-k">function</span>(<span class="pl-smi">e</span>){
@@ -324,11 +331,11 @@ readFileAction
 ._go(<span class="pl-en">console</span>.log);
 </pre></div>
 
-<p>The final result will be produced by <code>anotherProcess</code> if <code>someProcessMayWentWrong</code> didn't go wrong, or produced by <code>processError</code> otherwise.</p>
+<p>The final result will be produced by <code>anotherProcess</code> if <code>someProcessMayWentWrong</code> didn't go wrong or <code>readFile</code> failed, otherwise it will be produced by <code>processError</code>.</p>
 
-<p>You can place <code>guard</code> in the middle of the chain, all <code>Errors</code> before it will be handled by it, and the value it produced, will be passed to the rest of the chain.</p>
+<p>You can place <code>guard</code> in the middle of the chain, all <code>Errors</code> before it will be handled by it, and the value it produced, sync or async, will be passed to the rest of the chain.</p>
 
-<p>So, what if the use didn't supply a <code>guard</code>? Well, since use have to supply a callback to the <code>_go</code>, they can check if the callback they supplied received an <code>Error</code> or not like this:</p>
+<p>So, what if we don't supply a <code>guard</code>? Since we have to supply a callback to the <code>_go</code>, we can check if the callback we supplied received an <code>Error</code> or not like this:</p>
 
 <div class="highlight highlight-source-js"><pre>apiReturnAction(<span class="pl-s"><span class="pl-pds">'</span>...<span class="pl-pds">'</span></span>)._go(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
     <span class="pl-k">if</span> (data <span class="pl-k">instanceof</span> Error){
@@ -344,8 +351,8 @@ readFileAction
 <p>Yeah, it does work(and sometimes you want it work in this way), but:</p>
 
 <ul>
-<li><p>we don't want to force our user to supply a <code>cb</code> like above</p></li>
-<li><p>we should throw <code>Error</code> in case user didn't <code>guard</code> them</p></li>
+<li><p>we don't want to force our user to supply a <code>cb</code> like above.</p></li>
+<li><p>we should throw <code>Error</code> in case user didn't <code>guard</code> them.</p></li>
 </ul>
 
 <p>So here let me present the final version of <code>go</code>:</p>
@@ -438,9 +445,9 @@ readFileAction
 <p>Because it simply do less work:</p>
 
 <ul>
-<li>It doesn't maintain a internal state</li>
-<li>It just have a single field</li>
-<li>It just add a redirect call to original callback, and some type checking</li>
+<li><p>It doesn't maintain a internal state.</p></li>
+<li><p>It just have a single field.</p></li>
+<li><p>It just add a redirect call to original callback, and some type checking.</p></li>
 </ul>
 
 <p>I even be amazed it can achieve so much functionality with such short code myself, see <a href="https://github.com/winterland1989/Action.js/wiki/Benchmark">Benchmark</a> youself.</p>
@@ -498,6 +505,11 @@ fileA
         }
     });
 };</pre></div>
+
+<h2>
+<a id="how-can-i-send-an-error-to-downstream-as-normal-value" class="anchor" href="#how-can-i-send-an-error-to-downstream-as-normal-value" aria-hidden="true"><span class="octicon octicon-link"></span></a>How can i send an <code>Error</code> to downstream as normal value?</h2>
+
+<p>No, you can't, you have to wrap it in a <code>Array</code> or <code>Object</code> or <code>Map</code>...whatever, the choice of using <code>Error</code> to skip <code>next</code> and hit <code>guard</code> is not arbitrary, instead of creating an <code>ActionError</code> class, use <code>Error</code> unify type with system runtime, and providing callstack information.</p>
       </section>
       <footer>
         <p>This project is maintained by <a href="https://github.com/winterland1989">winterland1989</a></p>
