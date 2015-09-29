@@ -186,7 +186,7 @@ readFileAction
 ```
 
 Now we can say we have solved the callback hell problem! Well, actually just 50% of it.
-Before we proceed another 50%, one important thing to keep in mind: **an `Action` is not a promise, it will not happen if you don't fire it, and it can be fired multiple times, it's just a reference to a wrapped function**:
+Before we proceed another 50%, one important thing to keep in mind: **an `Action` is not a `Promise`, it will not happen if you don't fire it with `_go`, and it can be fired multiple times, it's just a reference to a wrapped function**:
 
 ```js
 readFileAction
@@ -202,7 +202,7 @@ readFileAction
 ._go(console.log)
 ```
 
-Later we'll present `Action.freeze` to fire an `Action` immediately, now let's face another 50% of the callback hell issue.
+I'll present `Action.freeze` in [Difference from Promise](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise) to give you Promise behavior when you need it, now let's attack another 50% of the callback hell issue.
 
 Error handling
 --------------
