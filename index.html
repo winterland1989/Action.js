@@ -464,12 +464,14 @@ fileA
 <h2>
 <a id="when-to-use-this-library" class="anchor" href="#when-to-use-this-library" aria-hidden="true"><span class="octicon octicon-link"></span></a>When to use this library?</h2>
 
-<p>With <code>Promise</code> added to ES6 and ES7 <code>async/await</code> proposal, you muse ask, why another library to the same trick again?, well, i can add generator support myself with something like <code>Action.async</code>, but i guess <code>Action</code> will never be part of the language, so i didn't, and i can see future will be full of <code>async</code> functions all over the place, so use this library if you:</p>
+<p>With <code>Promise</code> added to ES6 and ES7 <code>async/await</code> proposal, you must ask, why another library to do the same things again?</p>
+
+<p>I actually can add generator support with something like <code>Action.async</code>, but i guess <code>Action</code> will never be part of the language, so i didn't, and i can see future will be full of <code>async</code> functions all over the place, use this library if you:</p>
 
 <ul>
 <li>Have a FP background(can't you see all i have done is porting the <code>Cont</code> monad from Haskell?)</li>
 <li>Want raw speed, <code>Action.js</code> guarantee speed close to handroll callbacks, just much cleaner.</li>
-<li>Want different sementics, with <code>Promise</code>, you just can't reuse your callback chain, we have to create a new <code>Promise</code>, with <code>Action</code>, just <code>go</code> again. </li>
+<li>Want different sementics, with <code>Promise</code>, you just can't reuse your callback chain, we have to create a new <code>Promise</code>, with <code>Action</code>, just <code>go</code> again, never waste memory on GC. </li>
 </ul>
 
 <p>Consider following code:</p>
