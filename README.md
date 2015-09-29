@@ -259,7 +259,7 @@ Action.prototype.guard = function(cb) {
 };
 ```
 
-This time, we know the `cb` that `guard` received are prepared for `Error` values, so we flip the logic.
+This time, we know the `cb` that `guard` received are prepared for `Error` values, so we flip the logic, since it's just a flipped version of `next`, you can return an `Action` if your need some async code to deal with the `Error`.
 
 Following code demonstrate how to use our `next` and `guard`:
 
@@ -305,7 +305,7 @@ new Action(function(cb){
 
 The final result will be produced by `anotherProcess` if `someProcessMayWentWrong` didn't go wrong, or produced by `processError` otherwise.
 
-You can place `guard` in the middle of the chain, all `Errors` before if will be handled by it, and the value it produced, will be passed to the rest of the chain.
+You can place `guard` in the middle of the chain, all `Errors` before it will be handled by it, and the value it produced, will be passed to the rest of the chain.
 
 So, what if the use didn't supply a `guard`? Well, since use have to supply a callback to the `_go`, they can check if the callback they supplied received an `Error` or not like this:
 
@@ -321,7 +321,7 @@ apiReturnAction('...')._go(function(data){
 });
 
 ```
-Yeah, it does work, but we don't want force our user to write like above, and we should throw `Error` in case user didn't `guard` them:
+Yeah, it does work(and sometimes very useful), but we don't want to force our user to write like above, and we should throw `Error` in case user didn't `guard` them, so here let me present the final version of `go`:
 
 ```js
 Action.prototype.go = function(cb) {
@@ -336,7 +336,7 @@ Action.prototype.go = function(cb) {
 
 ```
 
-Now if user don't guard `Error`s, we will yell at them when `Error` occurs!
+Now user can omit the callback, and if user don't guard `Error`s, we will yell at them when `Error` occurs!
 
 ```js
 new Action(function(cb){
@@ -364,7 +364,7 @@ Action.safe = function(err, fn) {
         try {
             return fn(data);
         } catch (_error) {
-            return _error;
+            return err;
         }
     };
 };
@@ -385,7 +385,8 @@ new Action(function(cb){
     });
 })
 .next(
-    safe(new Error("PROCESS_ERROR_XXX: process xxx failed when xxx"), someProcessMayWentWrong)
+    safe( new Error("PROCESS_ERROR_XXX: process xxx failed when xxx")
+        , someProcessMayWentWrong)
 )
 .next(...)
 .next(...)
@@ -402,3 +403,74 @@ new Action(function(cb){
 ```
 
 That's all core functions of `Action` is going to give you, hope you enjoy my solution :), Check [API doc](https://github.com/winterland1989/Action.js/wiki/API-document) for more interesting things like `Action.parallel`, `Action.race`, `Action.sequence` and `Action.retry`, It's also highly recommend to read [Difference from Promise](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise) to get a deeper understanding.
+
+FAQ
+===
+
+Why you claim `Action` are faster than `Promise`?
+-------------------------------------------------
+
+Because it simply do less work:
+
++ It doesn't maintain a internal state
++ It just have a single field
++ It just add a redirect call to original callback, and some type checking
+
+I even be amazed it can achieve so much functionality with such short code myself, see [Benchmark](https://github.com/winterland1989/Action.js/wiki/Benchmark) youself.
+
+Why following code doesn't work?
+--------------------------------
+
+```js
+var fileA = readFileAction
+.go(processOne)
+
+fileA
+.next(processTwo)
+.go()
+```
+
+Well, read [Difference from Promise](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise) to get a detailed answer, tl,dr... here is the short answer:
+
+```js
+// readFile now and return a Action, this function won't block
+var fileA = Action.freeze(readFileAction.next(processOne))
+
+// now fileA will always have the same content and file will never be read again.
+fileA
+.next(processTwo)
+.go()
+
+// processTwo will receive the same content
+fileA
+.next(processTwo)
+.go()
+```
+
+If you want have a Promise behavior(fire and memorize), use `Action.freeze`, `go` won't return a new `Action`.
+
+When to use this library?
+-------------------------
+
+With `Promise` added to ES6 and ES7 `async/await` proposal, you muse ask, why another library to the same trick again?, well, i can add generator support myself with something like `Action.async`, but i guess `Action` will never be part of the language, so i didn't, and i can see future will be full of `async` functions all over the place, so use this library if you:
+
++ Have a FP background(can't you see all i have done is porting the `Cont` monad from Haskell?)
++ Want raw speed, `Action.js` guarantee speed close to handroll callbacks, just much cleaner.
++ Want different sementics, with `Promise`, you just can't reuse your callback chain, we have to create a new `Promise`, with `Action`, just `go` again. 
+
+Consider following code:
+
+```js
+Action.retry = function(times, action) {
+    var a;
+    return a = action.guard(function(e) {
+        if (times-- !== 0) {
+            return a;
+        } else {
+            return new Error('RETRY_ERROR: Retry limit reached');
+        }
+    });
+};
+```
+
+`Action.js` let you do [monadic recursion](https://www.haskell.org/haskellwiki/Recursion_in_a_monad), while `Promise` can't.
