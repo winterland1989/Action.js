@@ -52,8 +52,8 @@ readFile(<span class="pl-s"><span class="pl-pds">"</span>data.txt<span class="pl
 
 <p>Instead we don't give a callback(the <code>console.log</code>) to it right now, we save this read action in a new <code>Action</code>:</p>
 
-<div class="highlight highlight-source-js"><pre><span class="pl-k">var</span> <span class="pl-en">Action</span> <span class="pl-k">=</span> <span class="pl-k">function</span> <span class="pl-en">Action</span>(<span class="pl-smi">action1</span>) {
-    <span class="pl-v">this</span>._go <span class="pl-k">=</span> action1;
+<div class="highlight highlight-source-js"><pre><span class="pl-k">var</span> <span class="pl-en">Action</span> <span class="pl-k">=</span> <span class="pl-k">function</span> <span class="pl-en">Action</span>(<span class="pl-smi">go</span>) {
+    <span class="pl-v">this</span>._go <span class="pl-k">=</span> go;
 }
 
 <span class="pl-k">var</span> readFileAction <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-en">Action</span>(
