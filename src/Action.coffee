@@ -176,10 +176,12 @@ Action.sequence = (actions, stopAtError = false) ->
     else Action.wrap results
 
 # make an Action from a node style function
-Action.makeNodeAction = (nodeAPI) -> (arg) ->
+Action.makeNodeAction = (nodeAPI) -> (args...) ->
+    self = @
+    args.push (err, data) ->
+        cb if err then err else data
     new Action (cb) ->
-        nodeAPI arg, (err, data) ->
-            cb if err then err else data
+        nodeAPI.apply self, args
 
 if module? and  module.exports?
     module.exports = Action

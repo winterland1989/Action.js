@@ -1,4 +1,5 @@
 Action = require '../src/Action'
+fs = require 'fs'
 
 assertData = (data, target, label) ->
     if data != target
@@ -363,6 +364,42 @@ testAction
             assertData data.message, 'testError'
         .go ->
             console.log 'Action.sequence with error ok'
+            cb()
+
+.next ->
+
+    new Action (cb) ->
+        testSafe = Action.safe (new Error 'testError'), -> throw new Error ''
+        assertData testSafe().message, 'testError'
+        console.log 'Action.safe ok'
+        cb()
+
+.next ->
+
+    new Action (cb) ->
+        testSafeRaw = Action.safeRaw -> throw new Error 'testError'
+        assertData testSafeRaw().message, 'testError'
+        console.log 'Action.safeRaw ok'
+        cb()
+
+.next ->
+
+    new Action (cb) ->
+        readFileAction = Action.makeNodeAction fs.readFile
+        readFileAction 'bench.coffee'
+        .next (data) ->
+            assertData (data instanceof Buffer),  true
+            console.log 'Action.makeNodeAction without options ok'
+            cb()
+
+.next ->
+
+    new Action (cb) ->
+        readFileAction = Action.makeNodeAction fs.readFile
+        readFileAction 'bench.coffee', encoding: 'utf8'
+        .next (data) ->
+            assertData (data instanceof String),  true
+            console.log 'Action.makeNodeAction without options ok'
             cb()
 
 .go -> console.log 'test all passed'
