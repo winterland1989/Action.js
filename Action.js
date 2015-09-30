@@ -5,19 +5,15 @@
   ignore = function() {};
 
   Action = (function() {
-    function Action(action1) {
-      this.action = action1;
+    function Action(_go1) {
+      this._go = _go1;
     }
 
-    Action.prototype._go = function(cb) {
-      return this.action(cb);
-    };
-
     Action.prototype._next = function(cb) {
-      var self;
-      self = this;
+      var _go;
+      _go = this._go;
       return new Action(function(_cb) {
-        return self.action(function(data) {
+        return _go(function(data) {
           var _data;
           _data = cb(data);
           if (_data instanceof Action) {
@@ -30,10 +26,10 @@
     };
 
     Action.prototype.next = function(cb) {
-      var self;
-      self = this;
+      var _go;
+      _go = this._go;
       return new Action(function(_cb) {
-        return self.action(function(data) {
+        return _go(function(data) {
           var _data;
           if (data instanceof Error) {
             return _cb(data);
@@ -50,10 +46,10 @@
     };
 
     Action.prototype.guard = function(cb) {
-      var self;
-      self = this;
+      var _go;
+      _go = this._go;
       return new Action(function(_cb) {
-        return self.action(function(data) {
+        return _go(function(data) {
           var _data;
           if (data instanceof Error) {
             _data = cb(data);
@@ -70,7 +66,7 @@
     };
 
     Action.prototype.go = function(cb) {
-      return this.action(function(data) {
+      return this._go(function(data) {
         if (data instanceof Error) {
           throw data;
         } else if (cb != null) {
