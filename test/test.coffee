@@ -383,12 +383,13 @@ testAction
         cb()
 
 .next ->
-
     new Action (cb) ->
         readFileAction = Action.makeNodeAction fs.readFile
-        readFileAction 'bench.coffee'
+        console.log 'Reading bench.coffee without encoding'
+        readFileAction (__dirname + '/bench.coffee')
         .next (data) ->
             assertData (data instanceof Buffer),  true
+        .go ->
             console.log 'Action.makeNodeAction without options ok'
             cb()
 
@@ -396,10 +397,12 @@ testAction
 
     new Action (cb) ->
         readFileAction = Action.makeNodeAction fs.readFile
-        readFileAction 'bench.coffee', encoding: 'utf8'
+        console.log 'Reading bench.coffee with encoding'
+        readFileAction (__dirname + '/bench.coffee'), encoding: 'utf8'
         .next (data) ->
-            assertData (data instanceof String),  true
-            console.log 'Action.makeNodeAction without options ok'
+            assertData (typeof data), 'string'
+        .go ->
+            console.log 'Action.makeNodeAction with options ok'
             cb()
 
-.go -> console.log 'test all passed'
+.go -> console.log 'Tests all passed'

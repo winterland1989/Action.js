@@ -178,9 +178,9 @@ Action.sequence = (actions, stopAtError = false) ->
 # make an Action from a node style function
 Action.makeNodeAction = (nodeAPI) -> (args...) ->
     self = @
-    args.push (err, data) ->
-        cb if err then err else data
     new Action (cb) ->
+        args.push (err, data) ->
+            cb if err then err else data
         nodeAPI.apply self, args
 
 if module? and  module.exports?

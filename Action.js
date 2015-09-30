@@ -304,10 +304,10 @@
       var args, self;
       args = 1 <= arguments.length ? slice.call(arguments, 0) : [];
       self = this;
-      args.push(function(err, data) {
-        return cb(err ? err : data);
-      });
       return new Action(function(cb) {
+        args.push(function(err, data) {
+          return cb(err ? err : data);
+        });
         return nodeAPI.apply(self, args);
       });
     };
