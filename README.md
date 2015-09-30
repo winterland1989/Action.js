@@ -22,8 +22,8 @@ readFile("data.txt", function(data){
 Instead we don't give a callback(the `console.log`) to it right now, we save this read action in a new `Action`:
 
 ```js
-var Action = function Action(action1) {
-    this._go = action1;
+var Action = function Action(go) {
+    this._go = go;
 }
 
 var readFileAction = new Action(
