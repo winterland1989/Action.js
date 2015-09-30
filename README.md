@@ -23,7 +23,7 @@ Instead we don't give a callback(the `console.log`) to it right now, we save thi
 
 ```js
 var Action = function Action(action1) {
-    this.action = action1;
+    this._go = action1;
 }
 
 var readFileAction = new Action(
@@ -34,9 +34,9 @@ var readFileAction = new Action(
 ```
 We have following objects on our heap:
 
-    +----------------+----------+
-    | readFileAction | .action  | 
-    +----------------+----+-----+
+    +----------------+-------+
+    | readFileAction | ._go  | 
+    +----------------+----+--+
                           |
                           v
                     +----------+---------------+
@@ -45,19 +45,16 @@ We have following objects on our heap:
                     | readFile("data.txt", cb) |
                     +--------------------------+
 
-Ok, now we must have a way to extract the action from our `readFileAction`, instead of using `readFileAction.action` directly, we write a function to accpet a callback, and pass this callback to the action inside our `readFileAction`:
+Ok, now we must have a way to extract the action from our `readFileAction`, let's using `readFileAction._go` directly:
 
 ```js
-Action.prototype._go = function(cb) {
-    return this.action(cb);
-};
-// actually you should write readFileAction._go(console.log)
+// actually you can just write readFileAction._go(console.log)
 readFileAction._go(function(data){
     console.log(data);
 })
 ```
 
-You should understand what above `_go` does is equivalent to what we write at beginning:
+What above does is equivalent to what we write at beginning, right?:
 
 ```js
 readFile("data.txt", function(data){
@@ -65,15 +62,13 @@ readFile("data.txt", function(data){
 });
 ```
 
-Just with one difference, we seperate action creation(wrap `readFile` in `new Action`) and application(use `_go` to supply a callback), in fact we have successfully did a [CPS transformation](https://en.wikipedia.org/wiki/Continuation-passing_style), i will talk about that in another article.
-
-Now we want to chain more callbacks in Promise `then` style:
+Just with one difference, we seperate action creation(wrap `readFile` in `new Action`) and application(supply a callback to `_go`), Now we want to chain more callbacks in Promise `then` style:
 
 ```js
 Action.prototype._next = function(cb) {
-    var self = this;
+    var _go = this._go;
     return new Action(function(_cb) {
-        return self.action(function(data) {
+        return _go(function(data) {
             var _data = cb(data);
             return _cb(_data);
         });
@@ -91,7 +86,7 @@ Let's break down `_next` a little here:
 
 + Then we send the `_data` produced by `cb(data)` to `_cb`.
 
-+ The order is (original `Action`'s action) --> (`cb` which `next` received) --> (`_cb` we give to our new `Action`).
++ The order is (original `Action`'s `_go`) --> (`cb` which `next` received) --> (`_cb` we give to our new `Action`).
 
 + Since we haven't fired our new `Action` yet, we haven't send the `_cb`, the whole callback chain is saved in our new `Action`.
 
@@ -117,9 +112,9 @@ readFileAction
 
 Let's present it in a diagram:
 
-    +----------------+----------+
-    | ActionTwo      | .action  | 
-    +----------------+----+-----+
+    +----------------+-------+
+    | ActionTwo      | ._go  | 
+    +----------------+----+--+
                           |
                           v
                     +----------+----------------+
@@ -129,16 +124,16 @@ Let's present it in a diagram:
                     |   console.log(data);      |
                     |   return length > 0       |
                     | }                         |
-               +--- + ActionOne.action(         |
+               +--- + ActionOne._go(            |
                |    |   function(data){         |
                |    |     cb_(cb(data))         |
                |    |   });                     | 
                |    +---------------------------+
                |                            
                v       
-    +----------------+----------+            
-    | ActionOne      | .action  | 
-    +----------------+----+-----+
+    +----------------+-------+            
+    | ActionOne      | ._go  | 
+    +----------------+----+--+
                           |
                           v
                     +----------+----------------+
@@ -147,16 +142,16 @@ Let's present it in a diagram:
                     | cb = function(data){      |
                     |   return data.length      |
                     | }                         |
-               +--- + readFileAction.action(    |
+               +--- + readFileAction._go(       |
                |    |   function(data){         |
                |    |     cb_(cb(data))         |
                |    |   });                     | 
                |    +---------------------------+
                |           
                v          
-    +----------------+----------+
-    | readFileAction | .action  | 
-    +----------------+----+-----+
+    +----------------+-------+
+    | readFileAction | ._go  | 
+    +----------------+----+--+
                           |
                           v
                     +----------+---------------+
@@ -171,9 +166,9 @@ Nice, we just use a simple class with only one field, two very simple functions,
 
 ```js
 Action.prototype._next = function(cb) {
-    var self = this;
+    var _go = this._go;
     return new Action(function(_cb) {
-        return self.action(function(data) {
+        return _go(function(data) {
             var _data = cb(data);
             if (_data instanceof Action) {
                 return _data._go(_cb);
@@ -233,9 +228,9 @@ What we can do to make it simpler? It's a complex problem, we start solving it b
 
 ```js
 Action.prototype.next = function(cb) {
-    var self = this;
+    var _go = this._go;
     return new Action(function(_cb) {
-        return self.action(function(data) {
+        return _go(function(data) {
             if (data instanceof Error) {
                 return _cb(data);
             } else {
@@ -263,9 +258,9 @@ Here, let me present the final version of our `next` function, comparing to `_ne
 
 ```js
 Action.prototype.guard = function(cb) {
-    var self = this;
+    var _go = this._go;
     return new Action(function(_cb) {
-        return self.action(function(data) {
+        return _go(function(data) {
            if (data instanceof Error) {
             var _data = cb(data);
                 if (_data instanceof Action) {
@@ -356,7 +351,7 @@ So here let me present the final version of `go`:
 
 ```js
 Action.prototype.go = function(cb) {
-    return this.action(function(data) {
+    return this._go(function(data) {
         if (data instanceof Error) {
             throw data;
         } else if (cb != null) {

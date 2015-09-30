@@ -6,16 +6,13 @@ ignore = ->
 # Main class
 class Action
     # save an action to feed callback later
-    constructor: (@action) ->
-
-    # simplily fire action with given callback
-    _go: (cb) -> @action cb
+    constructor: (@_go) ->
 
     # return a new Action that when fire, it will call current action first, then the callback
     _next: (cb) ->
-        self = @
+        _go = @_go
         new Action (_cb) ->
-            self.action (data) ->
+            _go (data) ->
                 _data = cb(data)
                 # if a cb return an Action
                 if _data instanceof Action
@@ -25,9 +22,9 @@ class Action
     # return a new Action that when fire, it will call current action first, then the callback
     # if current action want to pass an error to the callback, stop it and pass it on
     next: (cb) ->
-        self = @
+        _go = @_go
         new Action (_cb) ->
-            self.action (data) ->
+            _go (data) ->
                 if data instanceof Error
                     _cb data
                 else
@@ -40,9 +37,9 @@ class Action
     # return a new Action that when fire, it will call current action first, then the callback
     # if current action want to pass a non error value to the callback, stop it and pass it on
     guard: (cb) ->
-        self = @
+        _go = @_go
         new Action (_cb) ->
-            self.action (data) ->
+            _go (data) ->
                 if data instanceof Error
                     _data = cb data
                     if _data instanceof Action
@@ -54,7 +51,7 @@ class Action
 
     # fire the callback chain with given callback(or ignore), any unhandled error will be thrown
     go: (cb) ->
-        @action (data) ->
+        @_go (data) ->
             if data instanceof Error
                 throw data
             else if cb? then cb data
