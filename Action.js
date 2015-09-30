@@ -99,7 +99,7 @@
           cb = callbacks[j];
           cb(_data);
         }
-        return cb = [];
+        return callbacks = [];
       }
     });
     return new Action(function(cb) {

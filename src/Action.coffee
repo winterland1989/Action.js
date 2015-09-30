@@ -70,7 +70,7 @@ Action.freeze = (action) ->
             data = _data
             pending = false
             for cb in callbacks then cb _data
-            cb = []
+            callbacks = []
     new Action (cb) ->
         if pending then callbacks.push cb
         else cb data
