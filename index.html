@@ -53,7 +53,7 @@ readFile(<span class="pl-s"><span class="pl-pds">"</span>data.txt<span class="pl
 <p>Instead we don't give a callback(the <code>console.log</code>) to it right now, we save this read action in a new <code>Action</code>:</p>
 
 <div class="highlight highlight-source-js"><pre><span class="pl-k">var</span> <span class="pl-en">Action</span> <span class="pl-k">=</span> <span class="pl-k">function</span> <span class="pl-en">Action</span>(<span class="pl-smi">action1</span>) {
-    <span class="pl-v">this</span>.<span class="pl-c1">action</span> <span class="pl-k">=</span> action1;
+    <span class="pl-v">this</span>._go <span class="pl-k">=</span> action1;
 }
 
 <span class="pl-k">var</span> readFileAction <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-en">Action</span>(
@@ -64,9 +64,9 @@ readFile(<span class="pl-s"><span class="pl-pds">"</span>data.txt<span class="pl
 
 <p>We have following objects on our heap:</p>
 
-<pre><code>+----------------+----------+
-| readFileAction | .action  | 
-+----------------+----+-----+
+<pre><code>+----------------+-------+
+| readFileAction | ._go  | 
++----------------+----+--+
                       |
                       v
                 +----------+---------------+
@@ -76,30 +76,25 @@ readFile(<span class="pl-s"><span class="pl-pds">"</span>data.txt<span class="pl
                 +--------------------------+
 </code></pre>
 
-<p>Ok, now we must have a way to extract the action from our <code>readFileAction</code>, instead of using <code>readFileAction.action</code> directly, we write a function to accpet a callback, and pass this callback to the action inside our <code>readFileAction</code>:</p>
+<p>Ok, now we must have a way to extract the action from our <code>readFileAction</code>, let's using <code>readFileAction._go</code> directly:</p>
 
-<div class="highlight highlight-source-js"><pre><span class="pl-c1">Action</span>.<span class="pl-c1">prototype</span>.<span class="pl-en">_go</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">cb</span>) {
-    <span class="pl-k">return</span> <span class="pl-v">this</span>.<span class="pl-c1">action</span>(cb);
-};
-<span class="pl-c">// actually you should write readFileAction._go(console.log)</span>
+<div class="highlight highlight-source-js"><pre><span class="pl-c">// actually you can just write readFileAction._go(console.log)</span>
 readFileAction._go(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
     <span class="pl-en">console</span>.<span class="pl-c1">log</span>(data);
 })</pre></div>
 
-<p>You should understand what above <code>_go</code> does is equivalent to what we write at beginning:</p>
+<p>What above does is equivalent to what we write at beginning, right?:</p>
 
 <div class="highlight highlight-source-js"><pre>readFile(<span class="pl-s"><span class="pl-pds">"</span>data.txt<span class="pl-pds">"</span></span>, <span class="pl-k">function</span>(<span class="pl-smi">data</span>){
     <span class="pl-en">console</span>.<span class="pl-c1">log</span>(data);
 });</pre></div>
 
-<p>Just with one difference, we seperate action creation(wrap <code>readFile</code> in <code>new Action</code>) and application(use <code>_go</code> to supply a callback), in fact we have successfully did a <a href="https://en.wikipedia.org/wiki/Continuation-passing_style">CPS transformation</a>, i will talk about that in another article.</p>
-
-<p>Now we want to chain more callbacks in Promise <code>then</code> style:</p>
+<p>Just with one difference, we seperate action creation(wrap <code>readFile</code> in <code>new Action</code>) and application(supply a callback to <code>_go</code>), Now we want to chain more callbacks in Promise <code>then</code> style:</p>
 
 <div class="highlight highlight-source-js"><pre><span class="pl-c1">Action</span>.<span class="pl-c1">prototype</span>.<span class="pl-en">_next</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">cb</span>) {
-    <span class="pl-k">var</span> self <span class="pl-k">=</span> <span class="pl-v">this</span>;
+    <span class="pl-k">var</span> _go <span class="pl-k">=</span> <span class="pl-v">this</span>._go;
     <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-en">Action</span>(<span class="pl-k">function</span>(<span class="pl-smi">_cb</span>) {
-        <span class="pl-k">return</span> self.<span class="pl-c1">action</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
+        <span class="pl-k">return</span> _go(<span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
             <span class="pl-k">var</span> _data <span class="pl-k">=</span> cb(data);
             <span class="pl-k">return</span> _cb(_data);
         });
@@ -113,7 +108,7 @@ readFileAction._go(<span class="pl-k">function</span>(<span class="pl-smi">data<
 <li><p>When the new <code>Action</code> fired with <code>_cb</code>, the original <code>Action</code>'s action will be fired first, and send the value to <code>cb</code>.</p></li>
 <li><p>We apply <code>cb</code> with <code>data</code> from the original <code>Action</code></p></li>
 <li><p>Then we send the <code>_data</code> produced by <code>cb(data)</code> to <code>_cb</code>.</p></li>
-<li><p>The order is (original <code>Action</code>'s action) --&gt; (<code>cb</code> which <code>next</code> received) --&gt; (<code>_cb</code> we give to our new <code>Action</code>).</p></li>
+<li><p>The order is (original <code>Action</code>'s <code>_go</code>) --&gt; (<code>cb</code> which <code>next</code> received) --&gt; (<code>_cb</code> we give to our new <code>Action</code>).</p></li>
 <li><p>Since we haven't fired our new <code>Action</code> yet, we haven't send the <code>_cb</code>, the whole callback chain is saved in our new <code>Action</code>.</p></li>
 </ul>
 
@@ -137,9 +132,9 @@ readFileAction._go(<span class="pl-k">function</span>(<span class="pl-smi">data<
 
 <p>Let's present it in a diagram:</p>
 
-<pre><code>+----------------+----------+
-| ActionTwo      | .action  | 
-+----------------+----+-----+
+<pre><code>+----------------+-------+
+| ActionTwo      | ._go  | 
++----------------+----+--+
                       |
                       v
                 +----------+----------------+
@@ -149,16 +144,16 @@ readFileAction._go(<span class="pl-k">function</span>(<span class="pl-smi">data<
                 |   console.log(data);      |
                 |   return length &gt; 0       |
                 | }                         |
-           +--- + ActionOne.action(         |
+           +--- + ActionOne._go(            |
            |    |   function(data){         |
            |    |     cb_(cb(data))         |
            |    |   });                     | 
            |    +---------------------------+
            |                            
            v       
-+----------------+----------+            
-| ActionOne      | .action  | 
-+----------------+----+-----+
++----------------+-------+            
+| ActionOne      | ._go  | 
++----------------+----+--+
                       |
                       v
                 +----------+----------------+
@@ -167,16 +162,16 @@ readFileAction._go(<span class="pl-k">function</span>(<span class="pl-smi">data<
                 | cb = function(data){      |
                 |   return data.length      |
                 | }                         |
-           +--- + readFileAction.action(    |
+           +--- + readFileAction._go(       |
            |    |   function(data){         |
            |    |     cb_(cb(data))         |
            |    |   });                     | 
            |    +---------------------------+
            |           
            v          
-+----------------+----------+
-| readFileAction | .action  | 
-+----------------+----+-----+
++----------------+-------+
+| readFileAction | ._go  | 
++----------------+----+--+
                       |
                       v
                 +----------+---------------+
@@ -191,9 +186,9 @@ readFileAction._go(<span class="pl-k">function</span>(<span class="pl-smi">data<
 <p>Nice, we just use a simple class with only one field, two very simple functions, the callbacks are now written in a much more readable way, but we have a key problem to be solved yet: what if we want to nest async <code>Action</code>s inside an <code>Action</code>? Turn out with a little modification to our <code>_next</code> function, we can handle that:</p>
 
 <div class="highlight highlight-source-js"><pre><span class="pl-c1">Action</span>.<span class="pl-c1">prototype</span>.<span class="pl-en">_next</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">cb</span>) {
-    <span class="pl-k">var</span> self <span class="pl-k">=</span> <span class="pl-v">this</span>;
+    <span class="pl-k">var</span> _go <span class="pl-k">=</span> <span class="pl-v">this</span>._go;
     <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-en">Action</span>(<span class="pl-k">function</span>(<span class="pl-smi">_cb</span>) {
-        <span class="pl-k">return</span> self.<span class="pl-c1">action</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
+        <span class="pl-k">return</span> _go(<span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
             <span class="pl-k">var</span> _data <span class="pl-k">=</span> cb(data);
             <span class="pl-k">if</span> (_data <span class="pl-k">instanceof</span> Action) {
                 <span class="pl-k">return</span> _data._go(_cb);
@@ -248,9 +243,9 @@ readFileAction
 <p>What we can do to make it simpler? It's a complex problem, we start solving it by simplify it: <strong>Action.js use <code>Error</code> type as a special type to pass error information to the downstream</strong>, what does this mean?</p>
 
 <div class="highlight highlight-source-js"><pre><span class="pl-c1">Action</span>.<span class="pl-c1">prototype</span>.<span class="pl-en">next</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">cb</span>) {
-    <span class="pl-k">var</span> self <span class="pl-k">=</span> <span class="pl-v">this</span>;
+    <span class="pl-k">var</span> _go <span class="pl-k">=</span> <span class="pl-v">this</span>._go;
     <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-en">Action</span>(<span class="pl-k">function</span>(<span class="pl-smi">_cb</span>) {
-        <span class="pl-k">return</span> self.<span class="pl-c1">action</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
+        <span class="pl-k">return</span> _go(<span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
             <span class="pl-k">if</span> (data <span class="pl-k">instanceof</span> Error) {
                 <span class="pl-k">return</span> _cb(data);
             } <span class="pl-k">else</span> {
@@ -276,9 +271,9 @@ readFileAction
 <p><code>next</code> ensure the <code>cb</code> it received, <strong>will never receive an <code>Error</code></strong>, we just skip <code>cb</code> and pass <code>Error</code> downstream, Symmetrically, we define a function which only deal with <code>Error</code>, and let normal values pass:</p>
 
 <div class="highlight highlight-source-js"><pre><span class="pl-c1">Action</span>.<span class="pl-c1">prototype</span>.<span class="pl-en">guard</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">cb</span>) {
-    <span class="pl-k">var</span> self <span class="pl-k">=</span> <span class="pl-v">this</span>;
+    <span class="pl-k">var</span> _go <span class="pl-k">=</span> <span class="pl-v">this</span>._go;
     <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-en">Action</span>(<span class="pl-k">function</span>(<span class="pl-smi">_cb</span>) {
-        <span class="pl-k">return</span> self.<span class="pl-c1">action</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
+        <span class="pl-k">return</span> _go(<span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
            <span class="pl-k">if</span> (data <span class="pl-k">instanceof</span> Error) {
             <span class="pl-k">var</span> _data <span class="pl-k">=</span> cb(data);
                 <span class="pl-k">if</span> (_data <span class="pl-k">instanceof</span> Action) {
@@ -363,7 +358,7 @@ readFileAction
 <p>So here let me present the final version of <code>go</code>:</p>
 
 <div class="highlight highlight-source-js"><pre><span class="pl-c1">Action</span>.<span class="pl-c1">prototype</span>.<span class="pl-en">go</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">cb</span>) {
-    <span class="pl-k">return</span> <span class="pl-v">this</span>.<span class="pl-c1">action</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
+    <span class="pl-k">return</span> <span class="pl-v">this</span>._go(<span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
         <span class="pl-k">if</span> (data <span class="pl-k">instanceof</span> Error) {
             <span class="pl-k">throw</span> data;
         } <span class="pl-k">else</span> <span class="pl-k">if</span> (cb <span class="pl-k">!=</span> <span class="pl-c1">null</span>) {
