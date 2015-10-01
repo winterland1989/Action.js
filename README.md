@@ -3,7 +3,10 @@ Action.js, a sane way to write async code
     
 + [FAQ](#FAQ)
 + [API document](https://github.com/winterland1989/Action.js/wiki/API-document)
-+ Usage: `npm i action-js` or `git clone https://github.com/winterland1989/Action.js.git`
++ [Difference from Promise](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise)
++ Usage: 
+    + `npm i action-js` and `var Action = require('action-js')`
+    + `git clone https://github.com/winterland1989/Action.js.git` and `var Action = require('Action.js')`
 
 Action.js offer a [faster](https://github.com/winterland1989/Action.js/wiki/Benchmark) and simpler(~200LOC, 7.7kB w/o minified, ~1kB minified gzippe) alternative to [Promise](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise), got 5 minutes?
 
