@@ -213,7 +213,7 @@ readFileAction
 ._go(console.log)
 ```
 
-I'll present `Action.freeze` in [Difference from Promise](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise) to give you Promise behavior when you need it, now let's attack another 50% of the callback hell issue.
+I'll present `Action.freeze` in [Difference from Promise](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise) to give you `Promise` behavior when you need it, now let's attack another 50% of the callback hell issue.
 
 Error handling
 --------------
@@ -288,7 +288,6 @@ new Action(function(cb){
             // not reject, not throw, just pass it on, let it go
             cb(err);
         }else{
-
             cb(data);
         }
     });
@@ -321,7 +320,7 @@ new Action(function(cb){
 
 ```
 
-The final result will be produced by `anotherProcess` if `someProcessMayWentWrong` didn't go wrong or `readFile` failed, otherwise it will be produced by `processError`.
+The final result will be produced by `anotherProcess` if `someProcessMayWentWrong` didn't go wrong or `readFile` didn't fail, otherwise it will be produced by `processError`.
 
 You can place `guard` in the middle of the chain, all `Errors` before it will be handled by it, and the value it produced, sync or async, will be passed to the rest of the chain.
 
@@ -403,7 +402,6 @@ var safe = Action.safe;
 new Action(function(cb){
     readFile('fileA', function(err, data){
         if (err){
-            // see how to pass an Error to downstream, not reject, not throw, just return
             cb(err);
         }else{
             cb(data);
@@ -468,7 +466,8 @@ Well, read [Difference from Promise](https://github.com/winterland1989/Action.js
 // readFile now and return a Action, this function won't block
 var fileA = Action.freeze(readFileAction.next(processOne))
 
-// now fileA will always have the same content and file will never be read again.
+// now fileA will always have the same content
+// and file will never be read again.
 fileA
 .next(processTwo)
 .go()
@@ -479,7 +478,7 @@ fileA
 .go()
 ```
 
-If you want have a Promise behavior(fire and memorize), use `Action.freeze`, `go` won't return a new `Action`.
+If you want have a `Promise` behavior(fire and memorize), use `Action.freeze`, `go` won't return a new `Action`.
 
 When to use this library?
 -------------------------
@@ -494,22 +493,22 @@ I actually can add generator support with something like `Action.async` when ES6
 
 + Want to control exactly when the action will run, with `Promise`, all action run in next tick, While with `Action`, action runs when you call `go`, `_go` or `Action.freeze`. 
 
-+ Want a different sementics, with `Promise`, you just can't reuse your callback chain, we have to create a new `Promise`, with `Action`, just `go` again, never waste memory on GC. 
++ Want a different sementics, with `Promise`, you just can't reuse your callback chain, you have to create a new `Promise`, with `Action`, just `go` again, never waste memory on GC. 
 
-Consider following code, and try to rewrite it with `Promise`:
+    Consider following code, and try to rewrite it with `Promise`:
 
-```js
-Action.retry = function(times, action) {
-    var a;
-    return a = action.guard(function(e) {
-        if (times-- !== 0) {
-            return a;
-        } else {
-            return new Error('RETRY_ERROR: Retry limit reached');
-        }
-    });
-};
-```
+    ```js
+    Action.retry = function(times, action) {
+        var a;
+        return a = action.guard(function(e) {
+            if (times-- !== 0) {
+                return a;
+            } else {
+                return new Error('RETRY_ERROR: Retry limit reached');
+            }
+        });
+    };
+    ```
 
 + Want raw speed, this is somehow not really an issue, most of the time, `Promise` or `Action` won't affect that much, nevertheless, `Action.js` can guarantee speed close to handroll callbacks, just much cleaner.
 
