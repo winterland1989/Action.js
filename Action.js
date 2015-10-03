@@ -385,10 +385,21 @@
       if (opts.responseType) {
         xhr.responseType = opts.responseType;
       }
-      if (opts.data != null) {
-        xhr.send(opts.data);
-      } else {
-        xhr.send();
+      switch (typeof opts.data) {
+        case 'string':
+          xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+          xhr.send(opts.data);
+          break;
+        case 'object':
+          if (opts.data instanceof window.FormData) {
+            xhr.send(opts.data);
+          } else {
+            xhr.setRequestHeader('Content-Type', 'application/json; charset=utf-8');
+            xhr.send(JSON.stringify(opts.data));
+          }
+          break;
+        default:
+          xhr.send();
       }
       return xhr;
     });

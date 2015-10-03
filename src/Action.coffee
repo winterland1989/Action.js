@@ -245,10 +245,20 @@ Action.ajax = (opts) ->
         if opts.responseType
             xhr.responseType = opts.responseType
 
-        if opts.data?
-            xhr.send opts.data
-        else xhr.send()
+        switch typeof opts.data
+            when 'string'
+                xhr.setRequestHeader 'Content-Type', 'application/x-www-form-urlencoded'
+                xhr.send opts.data
 
+            when 'object'
+                if opts.data instanceof window.FormData
+                    xhr.send opts.data
+                else
+                    xhr.setRequestHeader 'Content-Type', 'application/json; charset=utf-8'
+                    xhr.send JSON.stringify opts.data
+
+            else
+                xhr.send()
         xhr
 
 if module? and  module.exports?

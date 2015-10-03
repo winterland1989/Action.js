@@ -1,3 +1,6 @@
+v1.2.2
+Auto add header based on data type.
+
 v1.2.1
 Clear some error types.
 
