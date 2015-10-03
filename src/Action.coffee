@@ -230,7 +230,8 @@ Action.ajax = (opts) ->
         xhr.onload = ->
             if xhr.readyState == 4
                 if xhr.status >= 200 and xhr.status < 300
-                    cb xhr.response
+                    if opts.responseType? then cb xhr.response
+                    else cb xhr.responseText
                 else
                     cb new Error 'REQUEST_ERROR: status' + xhr.status
 
@@ -254,7 +255,7 @@ Action.ajax = (opts) ->
                 if opts.data instanceof window.FormData
                     xhr.send opts.data
                 else
-                    xhr.setRequestHeader 'Content-Type', 'application/json; charset=utf-8'
+                    xhr.setRequestHeader 'Content-Type', 'application/json; charset=UTF-8'
                     xhr.send JSON.stringify opts.data
 
             else

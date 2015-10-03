@@ -365,7 +365,11 @@
       xhr.onload = function() {
         if (xhr.readyState === 4) {
           if (xhr.status >= 200 && xhr.status < 300) {
-            return cb(xhr.response);
+            if (opts.responseType != null) {
+              return cb(xhr.response);
+            } else {
+              return cb(xhr.responseText);
+            }
           } else {
             return cb(new Error('REQUEST_ERROR: status' + xhr.status));
           }
@@ -394,7 +398,7 @@
           if (opts.data instanceof window.FormData) {
             xhr.send(opts.data);
           } else {
-            xhr.setRequestHeader('Content-Type', 'application/json; charset=utf-8');
+            xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
             xhr.send(JSON.stringify(opts.data));
           }
           break;

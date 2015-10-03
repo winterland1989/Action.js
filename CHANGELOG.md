@@ -1,3 +1,6 @@
+v1.2.3
+Fix responseType related.
+
 v1.2.2
 Auto add header based on data type.
 
