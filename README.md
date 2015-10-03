@@ -5,10 +5,14 @@ Action.js, a sane way to write async code
 + [API document](https://github.com/winterland1989/Action.js/wiki/API-document)
 + [Difference from Promise](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise)
 + Usage: 
-    + `npm i action-js` and `var Action = require('action-js')`
-    + `git clone https://github.com/winterland1989/Action.js.git` and `var Action = require('Action.js')`
+    + `npm i action-js` and `var Action = require('action-js')`.
+    + `git clone https://github.com/winterland1989/Action.js.git` and `var Action = require('Action.js')`.
+    + Add a script tag and use `window.Action`.
 
-Action.js offer a [faster](https://github.com/winterland1989/Action.js/wiki/Benchmark) and simpler(~200LOC, 7.7kB w/o minified, ~1kB minified gzippe) alternative to [Promise](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise), got 5 minutes?
++ Highlights:
+    + [Faster](https://github.com/winterland1989/Action.js/wiki/Benchmark) and simpler(~1kB minified gzipped)
+    + Full control capability with `retry`, `parallel`, `race`, `sequence` and more.
+    + Bundled with `ajax`, `jsonp` for front-end usage.
 
 Understand Action.js in 5 minutes
 ---------------------------------
@@ -25,7 +29,7 @@ readFile("data.txt", function(data){
 Instead we don't give a callback(the `console.log`) to it right now, we save this read action in a new `Action`:
 
 ```js
-var Action = function Action(go) {
+var Action = function(go) {
     this._go = go;
 }
 
@@ -43,7 +47,7 @@ We have following objects on our heap:
                           |
                           v
                     +----------+---------------+
-                    | function | cb            |
+                    | function(cb)             |
                     +----------+---------------+   
                     | readFile("data.txt", cb) |
                     +--------------------------+
@@ -51,7 +55,6 @@ We have following objects on our heap:
 Ok, now we must have a way to extract the action from our `readFileAction`, let's using `readFileAction._go` directly:
 
 ```js
-// actually you can just write readFileAction._go(console.log)
 readFileAction._go(function(data){
     console.log(data);
 })
@@ -121,7 +124,7 @@ Let's present it in a diagram:
                           |
                           v
                     +----------+----------------+
-                    | function | cb_            |
+                    | function(cb_)             |
                     +----------+----------------+  
                     | cb = function(data){      |
                     |   console.log(data);      |
@@ -140,7 +143,7 @@ Let's present it in a diagram:
                           |
                           v
                     +----------+----------------+
-                    | function | cb_            |
+                    | function(cb_)             |
                     +----------+----------------+  
                     | cb = function(data){      |
                     |   return data.length      |
@@ -158,7 +161,7 @@ Let's present it in a diagram:
                           |
                           v
                     +----------+---------------+
-                    | function | cb            |
+                    | function(cb)             |
                     +----------+---------------+   
                     | readFile("data.txt", cb) |
                     +--------------------------+
@@ -296,9 +299,11 @@ new Action(function(cb){
     });
 })
 .next(function(data){
+    // sync process
     return processData(data);
 })
 .next(function(data){
+    // async process
     return new Action(function(cb){
         processDataAsync(data, cb);
     })
@@ -323,7 +328,7 @@ new Action(function(cb){
 
 ```
 
-The final result will be produced by `anotherProcess` if `someProcessMayWentWrong` didn't go wrong or `readFile` didn't fail, otherwise it will be produced by `processError`.
+The final result will be produced by `anotherProcess` if `someProcessMayWentWrong` didn't go wrong and `readFile` didn't fail, otherwise it will be produced by `processError`.
 
 You can place `guard` in the middle of the chain, all `Errors` before it will be handled by it, and the value it produced, sync or async, will be passed to the rest of the chain.
 
