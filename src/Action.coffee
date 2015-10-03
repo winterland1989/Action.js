@@ -1,8 +1,6 @@
 # helper functions
-
 # ignore params
 ignore = ->
-
 
 # Main class
 class Action
@@ -84,7 +82,7 @@ Action.safe = (err, fn) -> (data) ->
 Action.safeRaw = (fn) -> (data) ->
     try fn(data) catch e then e
 
-# heler to chain monadic actions
+# helper to chain monadic actions
 Action.chain = (monadicActions) -> (init) ->
     if monadicActions.length > 0
         a = monadicActions[0](init)
@@ -184,7 +182,6 @@ Action.makeNodeAction = (nodeAPI) -> (args...) ->
             cb if err then err else data
         nodeAPI.apply self, args
 
-
 # recursively build query string
 makeQueryStrR = (prefix , data) ->
     result = []
@@ -196,8 +193,10 @@ makeQueryStrR = (prefix , data) ->
             result.push encodeURIComponent(key) + "=" + encodeURIComponent(v)
     result.join '&'
 
+# build query string
 Action.param = (data) -> makeQueryStrR('', data)
 
+# make a jsonp request
 Action.jsonp = (opts) ->
     new Action (cb) ->
         callbackName = 'callback_' + (Math.round(Math.random() * 1e16)).toString(36)
@@ -210,7 +209,7 @@ Action.jsonp = (opts) ->
 
         script.onerror = ->
             script.parentNode.removeChild script
-            cb new Error 'AJAX_REQUEST_ERROR: error when making jsonp request'
+            cb new Error 'REQUEST_ERROR: error when making jsonp request'
             window[callbackName] = undefined
             false
 
@@ -223,6 +222,7 @@ Action.jsonp = (opts) ->
         document.body.appendChild script
         script
 
+# make a ajax request
 Action.ajax = (opts) ->
     new Action (cb) ->
         xhr = new (window.XMLHttpRequest)
@@ -232,7 +232,7 @@ Action.ajax = (opts) ->
                 if xhr.status >= 200 and xhr.status < 300
                     cb xhr.response
                 else
-                    cb new Error 'AJAX_REQUEST_ERROR: status' + xhr.status
+                    cb new Error 'REQUEST_ERROR: status' + xhr.status
 
         for k, v of opts.headers
             xhr.setRequestHeader k, v
@@ -240,7 +240,7 @@ Action.ajax = (opts) ->
         if opts.timeout
             xhr.timeout = opts.timeout
             xhr.ontimeout = ->
-                cb new Error 'AJAX_REQUEST_ERROR: timeout'
+                cb new Error 'REQUEST_ERROR: timeout'
 
         if opts.responseType
             xhr.responseType = opts.responseType

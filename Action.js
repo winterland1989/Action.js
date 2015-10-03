@@ -344,7 +344,7 @@
       };
       script.onerror = function() {
         script.parentNode.removeChild(script);
-        cb(new Error('AJAX_REQUEST_ERROR: error when making jsonp request'));
+        cb(new Error('REQUEST_ERROR: error when making jsonp request'));
         window[callbackName] = void 0;
         return false;
       };
@@ -367,7 +367,7 @@
           if (xhr.status >= 200 && xhr.status < 300) {
             return cb(xhr.response);
           } else {
-            return cb(new Error('AJAX_REQUEST_ERROR: status' + xhr.status));
+            return cb(new Error('REQUEST_ERROR: status' + xhr.status));
           }
         }
       };
@@ -379,7 +379,7 @@
       if (opts.timeout) {
         xhr.timeout = opts.timeout;
         xhr.ontimeout = function() {
-          return cb(new Error('AJAX_REQUEST_ERROR: timeout'));
+          return cb(new Error('REQUEST_ERROR: timeout'));
         };
       }
       if (opts.responseType) {
