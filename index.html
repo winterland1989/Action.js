@@ -35,20 +35,28 @@
 <li><a href="#FAQ">FAQ</a></li>
 <li><a href="https://github.com/winterland1989/Action.js/wiki/API-document">API document</a></li>
 <li><a href="https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise">Difference from Promise</a></li>
-<li>Usage: 
+<li>
+<p>Usage: </p>
 
 <ul>
 <li>
-<code>npm i action-js</code> and <code>var Action = require('action-js')</code>
+<code>npm i action-js</code> and <code>var Action = require('action-js')</code>.</li>
+<li>
+<code>git clone https://github.com/winterland1989/Action.js.git</code> and <code>var Action = require('Action.js')</code>.</li>
+<li>Add a script tag and use <code>window.Action</code>.</li>
+</ul>
 </li>
 <li>
-<code>git clone https://github.com/winterland1989/Action.js.git</code> and <code>var Action = require('Action.js')</code>
-</li>
-</ul>
-</li>
-</ul>
+<p>Highlights:</p>
 
-<p>Action.js offer a <a href="https://github.com/winterland1989/Action.js/wiki/Benchmark">faster</a> and simpler(~200LOC, 7.7kB w/o minified, ~1kB minified gzippe) alternative to <a href="https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise">Promise</a>, got 5 minutes?</p>
+<ul>
+<li>
+<a href="https://github.com/winterland1989/Action.js/wiki/Benchmark">Faster</a> and simpler(~1kB minified gzipped)</li>
+<li>Full control capability with <code>retry</code>, <code>parallel</code>, <code>race</code>, <code>sequence</code> and more.</li>
+<li>Bundled with <code>ajax</code>, <code>jsonp</code> for front-end usage.</li>
+</ul>
+</li>
+</ul>
 
 <h2>
 <a id="understand-actionjs-in-5-minutes" class="anchor" href="#understand-actionjs-in-5-minutes" aria-hidden="true"><span class="octicon octicon-link"></span></a>Understand Action.js in 5 minutes</h2>
@@ -62,7 +70,7 @@ readFile(<span class="pl-s"><span class="pl-pds">"</span>data.txt<span class="pl
 
 <p>Instead we don't give a callback(the <code>console.log</code>) to it right now, we save this read action in a new <code>Action</code>:</p>
 
-<div class="highlight highlight-source-js"><pre><span class="pl-k">var</span> <span class="pl-en">Action</span> <span class="pl-k">=</span> <span class="pl-k">function</span> <span class="pl-en">Action</span>(<span class="pl-smi">go</span>) {
+<div class="highlight highlight-source-js"><pre><span class="pl-k">var</span> <span class="pl-en">Action</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">go</span>) {
     <span class="pl-v">this</span>._go <span class="pl-k">=</span> go;
 }
 
@@ -80,7 +88,7 @@ readFile(<span class="pl-s"><span class="pl-pds">"</span>data.txt<span class="pl
                       |
                       v
                 +----------+---------------+
-                | function | cb            |
+                | function(cb)             |
                 +----------+---------------+   
                 | readFile("data.txt", cb) |
                 +--------------------------+
@@ -88,8 +96,7 @@ readFile(<span class="pl-s"><span class="pl-pds">"</span>data.txt<span class="pl
 
 <p>Ok, now we must have a way to extract the action from our <code>readFileAction</code>, let's using <code>readFileAction._go</code> directly:</p>
 
-<div class="highlight highlight-source-js"><pre><span class="pl-c">// actually you can just write readFileAction._go(console.log)</span>
-readFileAction._go(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
+<div class="highlight highlight-source-js"><pre>readFileAction._go(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
     <span class="pl-en">console</span>.<span class="pl-c1">log</span>(data);
 })</pre></div>
 
@@ -148,7 +155,7 @@ readFileAction._go(<span class="pl-k">function</span>(<span class="pl-smi">data<
                       |
                       v
                 +----------+----------------+
-                | function | cb_            |
+                | function(cb_)             |
                 +----------+----------------+  
                 | cb = function(data){      |
                 |   console.log(data);      |
@@ -167,7 +174,7 @@ readFileAction._go(<span class="pl-k">function</span>(<span class="pl-smi">data<
                       |
                       v
                 +----------+----------------+
-                | function | cb_            |
+                | function(cb_)             |
                 +----------+----------------+  
                 | cb = function(data){      |
                 |   return data.length      |
@@ -185,7 +192,7 @@ readFileAction._go(<span class="pl-k">function</span>(<span class="pl-smi">data<
                       |
                       v
                 +----------+---------------+
-                | function | cb            |
+                | function(cb)             |
                 +----------+---------------+   
                 | readFile("data.txt", cb) |
                 +--------------------------+
@@ -314,9 +321,11 @@ readFileAction
     });
 })
 .<span class="pl-c1">next</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
+    <span class="pl-c">// sync process</span>
     <span class="pl-k">return</span> processData(data);
 })
 .<span class="pl-c1">next</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
+    <span class="pl-c">// async process</span>
     <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-en">Action</span>(<span class="pl-k">function</span>(<span class="pl-smi">cb</span>){
         processDataAsync(data, cb);
     })
@@ -340,7 +349,7 @@ readFileAction
 ._go(<span class="pl-en">console</span>.log);
 </pre></div>
 
-<p>The final result will be produced by <code>anotherProcess</code> if <code>someProcessMayWentWrong</code> didn't go wrong or <code>readFile</code> didn't fail, otherwise it will be produced by <code>processError</code>.</p>
+<p>The final result will be produced by <code>anotherProcess</code> if <code>someProcessMayWentWrong</code> didn't go wrong and <code>readFile</code> didn't fail, otherwise it will be produced by <code>processError</code>.</p>
 
 <p>You can place <code>guard</code> in the middle of the chain, all <code>Errors</code> before it will be handled by it, and the value it produced, sync or async, will be passed to the rest of the chain.</p>
 
