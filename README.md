@@ -92,7 +92,7 @@ Let's break down `_next` a little here:
 
 + Then we send the `_data` produced by `cb(data)` to `_cb`.
 
-+ The order is (original `Action`'s `_go`) --> (`cb` which `next` received) --> (`_cb` we give to our new `Action`).
++ The order is (original `Action`'s `_go`) --> (`cb` which `_next` received) --> (`_cb` we give to our new `Action`).
 
 + Since we haven't fired our new `Action` yet, we haven't send the `_cb`, the whole callback chain is saved in our new `Action`.
 
@@ -168,7 +168,7 @@ Let's present it in a diagram:
 
 `ActionOne` and `ActionTwo` are `Action`s first and second `_next` returned respectively, Now if we give `ActionTwo` a callback with `_go`, the whole callback chain will be fired sequential.
 
-Nice, we just use a simple class with only one field, two very simple functions, the callbacks are now written in a much more readable way, but we have a key problem to be solved yet: what if we want to nest async `Action`s inside an `Action`? Turn out with a little modification to our `_next` function, we can handle that:
+Nice, we just use a simple class with only one field, one very simple functions, the callbacks are now written in a much more readable way, but we have a key problem to be solved yet: what if we want to nest async `Action` inside an `Action`? Turn out with a little modification to our `_next` function, we can handle that:
 
 ```js
 Action.prototype._next = function(cb) {
@@ -186,7 +186,7 @@ Action.prototype._next = function(cb) {
 };
 ```
 
-We use `instanceof Action` to check if a callback returns an `Action` or not, if an `Action` is returned, we fire it with `_cb`, the callback which our new `Action` will going to receive:
+We use `instanceof Action` to check if `cb` returns an `Action` or not, if an `Action` is returned, we fire it with `_cb`, the callback which our new `Action` will going to receive:
 
 ```js
 readFileAction
@@ -256,9 +256,9 @@ Here, let me present the final version of our `next` function, comparing to `_ne
 
 + It still reture a new `Action`, when it fired, the original action are called.
 
-+ We checked if the data are `instanceof Error`, if it's not, everything as usual, we feed it to `cb` that `next` received.
++ We checked if the `data` coming from upstream is `instanceof Error`, if it's not, everything as usual, we feed it to `cb` that `next` received.
 
-+ But if it's an `Error`, we pass it to a future `_cb`, which we don't have now.
++ But if it's an `Error`, we skip `cb`, pass it to a future `_cb`, which we don't have now.
 
 `next` ensure the `cb` it received, **will never receive an `Error`**, we just skip `cb` and pass `Error` downstream, Symmetrically, we define a function which only deal with `Error`, and let normal values pass:
 
@@ -332,7 +332,7 @@ The final result will be produced by `anotherProcess` if `someProcessMayWentWron
 
 You can place `guard` in the middle of the chain, all `Errors` before it will be handled by it, and the value it produced, sync or async, will be passed to the rest of the chain.
 
-So, what if we don't supply a `guard`? Since we have to supply a callback to the `_go`, we can check if the callback we supplied received an `Error` or not like this:
+So, what if we don't supply a `guard`? Since we have to supply a callback to `_go`, we can check if the final result is an `Error` or not like this:
 
 ```js
 apiReturnAction('...')._go(function(data){
@@ -354,7 +354,6 @@ Yeah, it does work(and sometimes you want it work in this way), but:
 + we should throw `Error` in case user didn't `guard` them.
 
 So here let me present the final version of `go`:
-
 
 ```js
 Action.prototype.go = function(cb) {
