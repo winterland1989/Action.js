@@ -125,7 +125,7 @@ readFile(<span class="pl-s"><span class="pl-pds">"</span>data.txt<span class="pl
 <li><p>When the new <code>Action</code> fired with <code>_cb</code>, the original <code>Action</code>'s action will be fired first, and send the value to <code>cb</code>.</p></li>
 <li><p>We apply <code>cb</code> with <code>data</code> from the original <code>Action</code></p></li>
 <li><p>Then we send the <code>_data</code> produced by <code>cb(data)</code> to <code>_cb</code>.</p></li>
-<li><p>The order is (original <code>Action</code>'s <code>_go</code>) --&gt; (<code>cb</code> which <code>next</code> received) --&gt; (<code>_cb</code> we give to our new <code>Action</code>).</p></li>
+<li><p>The order is (original <code>Action</code>'s <code>_go</code>) --&gt; (<code>cb</code> which <code>_next</code> received) --&gt; (<code>_cb</code> we give to our new <code>Action</code>).</p></li>
 <li><p>Since we haven't fired our new <code>Action</code> yet, we haven't send the <code>_cb</code>, the whole callback chain is saved in our new <code>Action</code>.</p></li>
 </ul>
 
@@ -200,7 +200,7 @@ readFile(<span class="pl-s"><span class="pl-pds">"</span>data.txt<span class="pl
 
 <p><code>ActionOne</code> and <code>ActionTwo</code> are <code>Action</code>s first and second <code>_next</code> returned respectively, Now if we give <code>ActionTwo</code> a callback with <code>_go</code>, the whole callback chain will be fired sequential.</p>
 
-<p>Nice, we just use a simple class with only one field, two very simple functions, the callbacks are now written in a much more readable way, but we have a key problem to be solved yet: what if we want to nest async <code>Action</code>s inside an <code>Action</code>? Turn out with a little modification to our <code>_next</code> function, we can handle that:</p>
+<p>Nice, we just use a simple class with only one field, one very simple functions, the callbacks are now written in a much more readable way, but we have a key problem to be solved yet: what if we want to nest async <code>Action</code> inside an <code>Action</code>? Turn out with a little modification to our <code>_next</code> function, we can handle that:</p>
 
 <div class="highlight highlight-source-js"><pre><span class="pl-c1">Action</span>.<span class="pl-c1">prototype</span>.<span class="pl-en">_next</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">cb</span>) {
     <span class="pl-k">var</span> _go <span class="pl-k">=</span> <span class="pl-v">this</span>._go;
@@ -216,7 +216,7 @@ readFile(<span class="pl-s"><span class="pl-pds">"</span>data.txt<span class="pl
     });
 };</pre></div>
 
-<p>We use <code>instanceof Action</code> to check if a callback returns an <code>Action</code> or not, if an <code>Action</code> is returned, we fire it with <code>_cb</code>, the callback which our new <code>Action</code> will going to receive:</p>
+<p>We use <code>instanceof Action</code> to check if <code>cb</code> returns an <code>Action</code> or not, if an <code>Action</code> is returned, we fire it with <code>_cb</code>, the callback which our new <code>Action</code> will going to receive:</p>
 
 <div class="highlight highlight-source-js"><pre>readFileAction
 ._next(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
@@ -281,8 +281,8 @@ readFileAction
 
 <ul>
 <li><p>It still reture a new <code>Action</code>, when it fired, the original action are called.</p></li>
-<li><p>We checked if the data are <code>instanceof Error</code>, if it's not, everything as usual, we feed it to <code>cb</code> that <code>next</code> received.</p></li>
-<li><p>But if it's an <code>Error</code>, we pass it to a future <code>_cb</code>, which we don't have now.</p></li>
+<li><p>We checked if the <code>data</code> coming from upstream is <code>instanceof Error</code>, if it's not, everything as usual, we feed it to <code>cb</code> that <code>next</code> received.</p></li>
+<li><p>But if it's an <code>Error</code>, we skip <code>cb</code>, pass it to a future <code>_cb</code>, which we don't have now.</p></li>
 </ul>
 
 <p><code>next</code> ensure the <code>cb</code> it received, <strong>will never receive an <code>Error</code></strong>, we just skip <code>cb</code> and pass <code>Error</code> downstream, Symmetrically, we define a function which only deal with <code>Error</code>, and let normal values pass:</p>
@@ -353,7 +353,7 @@ readFileAction
 
 <p>You can place <code>guard</code> in the middle of the chain, all <code>Errors</code> before it will be handled by it, and the value it produced, sync or async, will be passed to the rest of the chain.</p>
 
-<p>So, what if we don't supply a <code>guard</code>? Since we have to supply a callback to the <code>_go</code>, we can check if the callback we supplied received an <code>Error</code> or not like this:</p>
+<p>So, what if we don't supply a <code>guard</code>? Since we have to supply a callback to <code>_go</code>, we can check if the final result is an <code>Error</code> or not like this:</p>
 
 <div class="highlight highlight-source-js"><pre>apiReturnAction(<span class="pl-s"><span class="pl-pds">'</span>...<span class="pl-pds">'</span></span>)._go(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
     <span class="pl-k">if</span> (data <span class="pl-k">instanceof</span> Error){
