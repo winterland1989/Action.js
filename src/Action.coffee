@@ -174,13 +174,24 @@ Action.sequence = (actions, stopAtError = false) ->
 
     else Action.wrap results
 
+# Helpers for makeNodeAction
+appendArgs = (target, appendee) ->
+    len = target.length
+    ret = new Array(len + 1)
+    ret[len] = appendee
+    while len-- > 0
+        ret[len] = target[len]
+    ret
+
+makeNodeCb = (cb) -> (err, data) ->
+    cb if err then err else data
+
 # make an Action from a node style function
-Action.makeNodeAction = (nodeAPI) -> (args...) ->
+Action.makeNodeAction = (nodeAPI) -> () ->
     self = @
+    args = arguments
     new Action (cb) ->
-        args.push (err, data) ->
-            cb if err then err else data
-        nodeAPI.apply self, args
+        nodeAPI.apply self, appendArgs(args, makeNodeCb(cb))
 
 # recursively build query string
 makeQueryStrR = (prefix , data) ->

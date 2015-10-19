@@ -1,3 +1,6 @@
+v1.2.4
+Improve makeNodeAction
+
 v1.2.3
 Fix responseType related.
 
