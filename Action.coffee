@@ -1,6 +1,8 @@
-# helper functions
-# ignore params
-ignore = ->
+# auto choose fmap or >>=
+fireByResult = (cb, data) ->
+    if data instanceof Action
+        data._go cb
+    else cb data
 
 # Main class
 class Action
@@ -11,12 +13,7 @@ class Action
     _next: (cb) ->
         _go = @_go
         new Action (_cb) ->
-            _go (data) ->
-                _data = cb(data)
-                # if a cb return an Action
-                if _data instanceof Action
-                    _data._go _cb
-                else _cb _data
+            _go (data) -> fireByResult(_cb, cb(data))
 
     # return a new Action that when fire, it will call current action first, then the callback
     # if current action want to pass an error to the callback, stop it and pass it on
@@ -26,12 +23,7 @@ class Action
             _go (data) ->
                 if data instanceof Error
                     _cb data
-                else
-                    _data = cb(data)
-                    # if a cb return an Action
-                    if _data instanceof Action
-                        _data._go _cb
-                    else _cb _data
+                else fireByResult _cb, cb(data)
 
     # return a new Action that when fire, it will call current action first, then the callback
     # if current action want to pass a non error value to the callback, stop it and pass it on
@@ -40,12 +32,7 @@ class Action
         new Action (_cb) ->
             _go (data) ->
                 if data instanceof Error
-                    _data = cb data
-                    if _data instanceof Action
-                        _data._go _cb
-                    else
-                        _cb _data
-
+                    fireByResult _cb, cb(data)
                 else _cb data
 
     # fire the callback chain with given callback(or ignore), any unhandled error will be thrown
@@ -118,70 +105,95 @@ Action.gapRetry = (times, delay, action) ->
 
 # run an Array of Actions in parallel, return an Action wraps results in an Array
 Action.parallel = (actions, stopAtError = false) ->
-    results = []
-    countDown = actions.length
-    new Action (cb) ->
-        if countDown > 0
-            # we have to remember the index here to get the results in order
-            for action, i in actions then do (index = i) ->
+    l = actions.length
+    if l > 0
+        new Action (cb) ->
+            countDown = l
+            results = new Array(countDown)
+            returns = new Array(countDown)
+            fireByIndex = (action, index) ->
                 action._go (data) ->
                     countDown--
                     if (data instanceof Error) and stopAtError
-                        cb data
-                        cb = ignore
+                        cb?(data)
+                        cb = undefined
                     else
                         results[index] = data
-                        if countDown == 0
-                            cb results
-        else cb result
+                        if countDown == 0 then cb results
+            for action, i in actions
+                returns[i] = fireByIndex action, i
+            returns
+    else Action.wrap results
+
+# join two Actions together
+Action.join = (action1, action2, cb2) ->
+    new Action (cb) ->
+        result1 = result2 = undefined
+        countDown = 2
+
+        action1._go (data) ->
+            result1 = data
+            countDown--
+            if countDown == 0
+                fireByResult(cb, (cb2 result1, result2))
+
+        action1._go (data) ->
+            result2 = data
+            countDown--
+            if countDown == 0
+                fireByResult(cb, (cb2 result1, result2))
 
 # run an Array of Actions in parallel, return an Action wraps first result
 Action.race = (actions, stopAtError = false) ->
-    countDown = actions.length
     new Action (cb) ->
+        countDown = actions.length
+        returns = new Array(countDown)
         if countDown == 0
             cb new Error 'RACE_ERROR: All actions failed'
-        else for action in actions
-            action._go (data) ->
+        else for action, i in actions
+            returns[i] = action._go (data) ->
                 countDown--
                 if (data not instanceof Error) or stopAtError
-                    cb data
-                    cb = ignore
+                    cb?(data)
+                    cb = undefined
                     countDown = -1
                 else if countDown == 0
                     cb new Error 'RACE_ERROR: All actions failed'
+            returns
 
 # run an Array of Actions in sequence, return an Action wraps results in an Array
 Action.sequence = (actions, stopAtError = false) ->
-    results = []
-    countDown = actions.length
-    if countDown > 0
-        a = actions[0]
-        for action in actions[1..] then do (action = action) ->
-            a = a._next (data) ->
-                if (data instanceof Error) and stopAtError
-                    data
-                else
-                    results.push data
-                    action
-
+    l = actions.length
+    chainByIndex = (a, action, index, results) ->
         a._next (data) ->
             if (data instanceof Error) and stopAtError
                 data
             else
-                results.push data
-                results
+                results[index] = data
+                action
+    new Action (cb) ->
+        results = new Array(l)
+        if l > 0
+            a = actions[0]
+            for action, i in actions[1..]
+                a = chainByIndex(a, action, i, results)
 
-    else Action.wrap results
+            a._go (data) ->
+                if (data instanceof Error) and stopAtError
+                        cb data
+                    else
+                        results[l-1] = data
+                        cb results
+        else cb results
 
 # Helpers for makeNodeAction
 appendArgs = (target, appendee) ->
-    len = target.length
-    ret = new Array(len + 1)
-    ret[len] = appendee
-    while len-- > 0
-        ret[len] = target[len]
-    ret
+    l = target.length
+    returns = new Array(l + 1)
+    returns[l] = appendee
+    while l-- > 0
+        returns[l] = target[l]
+    returns
 
 makeNodeCb = (cb) -> (err, data) ->
     cb if err then err else data

@@ -1,4 +1,4 @@
-Action = require '../src/Action.coffee'
+Action = require '../Action.coffee'
 
 new Action (cb) ->
     Action.jsonp

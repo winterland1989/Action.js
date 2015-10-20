@@ -1,3 +1,6 @@
+v1.3.0
+Add Action.join, optimized internal
+
 v1.2.4
 Improve makeNodeAction
 

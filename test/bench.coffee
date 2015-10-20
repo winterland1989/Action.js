@@ -1,4 +1,4 @@
-Action = require '../src/Action'
+Action = require '../Action.coffee'
 PromiseBlueBird = require './bluebird.js'
 os = require 'os'
 

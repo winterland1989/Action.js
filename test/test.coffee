@@ -1,4 +1,4 @@
-Action = require '../src/Action'
+Action = require '../Action.coffee'
 fs = require 'fs'
 
 assertData = (data, target, label) ->
@@ -293,7 +293,7 @@ testAction
             assertData datas[0], 'data1foo'
             assertData datas[1], 'data2bar'
         .go ->
-            console.log 'Action.all without error ok'
+            console.log 'Action.parallel without error ok'
             cb()
 
 .next ->
@@ -305,7 +305,7 @@ testAction
         .guard (e) ->
             assertData e.message, 'testError'
         .go ->
-            console.log 'Action.all with error ok'
+            console.log 'Action.parallel with error ok'
             cb()
 
 .next ->
@@ -316,7 +316,7 @@ testAction
             assertData datas[0], 'data1foo'
             assertData datas[1], 'data2bar'
         .go ->
-            console.log 'Action.allSuccess without error ok'
+            console.log 'Action.parallel without error ok'
             cb()
 
 .next ->
@@ -327,7 +327,7 @@ testAction
             assertData datas[0], 'data1foo'
             assertData datas[1].message, 'testError'
         .go ->
-            console.log 'Action.allSuccess with error ok'
+            console.log 'Action.parallel with error ok'
             cb()
 
 .next ->
