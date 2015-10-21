@@ -1,3 +1,6 @@
+v1.4.0
+Add Action.co, fix Action.join typos, test cover 100% agian.
+
 v1.3.0
 Add Action.join, optimized internal
 

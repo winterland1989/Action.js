@@ -51,15 +51,15 @@ Action.freeze = (action) ->
     pending = true
     data = undefined
     callbacks = []
-    action._go (_data) ->
+    ret = action._go (_data) ->
         if pending
             data = _data
             pending = false
             for cb in callbacks then cb _data
             callbacks = undefined
     new Action (cb) ->
-        if pending then callbacks.push cb
-        else cb data
+        if pending then callbacks.push cb else cb data
+        ret
 
 # helper to supply custom error
 Action.safe = (err, fn) -> (data) ->
@@ -110,7 +110,6 @@ Action.parallel = (actions, stopAtError = false) ->
         new Action (cb) ->
             countDown = l
             results = new Array(countDown)
-            returns = new Array(countDown)
             fireByIndex = (action, index) ->
                 action._go (data) ->
                     countDown--
@@ -121,8 +120,9 @@ Action.parallel = (actions, stopAtError = false) ->
                         results[index] = data
                         if countDown == 0 then cb results
             for action, i in actions
-                returns[i] = fireByIndex action, i
-            returns
+                fireByIndex action, i
+            # avoid allocating an Array holding returns
+            undefined
     else Action.wrap results
 
 # join two Actions together
@@ -130,28 +130,26 @@ Action.join = (action1, action2, cb2) ->
     new Action (cb) ->
         result1 = result2 = undefined
         countDown = 2
-
         action1._go (data) ->
             result1 = data
             countDown--
             if countDown == 0
                 fireByResult(cb, (cb2 result1, result2))
-
-        action1._go (data) ->
+        action2._go (data) ->
             result2 = data
             countDown--
             if countDown == 0
                 fireByResult(cb, (cb2 result1, result2))
+        undefined
 
 # run an Array of Actions in parallel, return an Action wraps first result
 Action.race = (actions, stopAtError = false) ->
     new Action (cb) ->
         countDown = actions.length
-        returns = new Array(countDown)
         if countDown == 0
             cb new Error 'RACE_ERROR: All actions failed'
         else for action, i in actions
-            returns[i] = action._go (data) ->
+            action._go (data) ->
                 countDown--
                 if (data not instanceof Error) or stopAtError
                     cb?(data)
@@ -159,7 +157,7 @@ Action.race = (actions, stopAtError = false) ->
                     countDown = -1
                 else if countDown == 0
                     cb new Error 'RACE_ERROR: All actions failed'
-            returns
+            undefined
 
 # run an Array of Actions in sequence, return an Action wraps results in an Array
 Action.sequence = (actions, stopAtError = false) ->
@@ -177,7 +175,6 @@ Action.sequence = (actions, stopAtError = false) ->
             a = actions[0]
             for action, i in actions[1..]
                 a = chainByIndex(a, action, i, results)
-
             a._go (data) ->
                 if (data instanceof Error) and stopAtError
                         cb data
@@ -204,6 +201,17 @@ Action.makeNodeAction = (nodeAPI) -> () ->
     args = arguments
     new Action (cb) ->
         nodeAPI.apply self, appendArgs(args, makeNodeCb(cb))
+
+# Helpers for Action.co
+spawn = (gen, action) ->
+    action.next (v) ->
+        {value: nextAction, done: done} = gen.next(v)
+        if !done then spawn(gen, nextAction) else action
+
+# use generator's yeild to wait on Actions
+Action.co = (genFn) -> () ->
+    gen = genFn.apply this, arguments
+    spawn gen, gen.next().value
 
 # recursively build query string
 makeQueryStrR = (prefix , data) ->
@@ -242,6 +250,7 @@ Action.jsonp = (opts) ->
             (if opts.callback then opts.callback else 'callback') +
             '=' + callbackName
 
+        script.callbackName = callbackName
         document.body.appendChild script
         script
 
@@ -280,12 +289,10 @@ Action.ajax = (opts) ->
                 else
                     xhr.setRequestHeader 'Content-Type', 'application/json; charset=UTF-8'
                     xhr.send JSON.stringify opts.data
-
-            else
-                xhr.send()
+            else xhr.send()
         xhr
 
-if module? and  module.exports?
+if module? and module.exports?
     module.exports = Action
 else if (typeof define == "function" and define.amd)
     define -> Action
