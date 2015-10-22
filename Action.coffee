@@ -202,15 +202,18 @@ Action.makeNodeAction = (nodeAPI) -> (a,b,c) ->
     new Action _go
 
 # Helpers for Action.co
-spawn = (gen, action) ->
-    action.next (v) ->
+spawn = (gen, action, cb) ->
+    action._go (v) ->
+        if v instanceof Error
+            gen.throw v
         {value: nextAction, done: done} = gen.next(v)
-        if done then action else spawn(gen, nextAction)
+        if done then cb v else spawn(gen, nextAction, cb)
 
 # use generator's yeild to wait on Actions
 Action.co = (genFn) -> () ->
     gen = genFn.apply this, arguments
-    spawn gen, gen.next().value
+    new Action (cb) ->
+        spawn gen, gen.next().value, cb
 
 # recursively build query string
 makeQueryStrR = (prefix , data) ->

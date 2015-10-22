@@ -460,6 +460,9 @@ The choice of using `Error` to skip `next` and hit `guard` is not arbitrary, ins
 Changelog<a name="Changelog"></a>
 ================================
 
+v2.1.0
+Change `Action.co` into more async-await style, you can use try-catch to catch `Error`s now.  
+
 v2.0.0
 Update doc, Remove `gapRetry`, since it's just a `retry` compose `delay`. 
 

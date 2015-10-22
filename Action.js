@@ -354,14 +354,17 @@
     };
   };
 
-  spawn = function(gen, action) {
-    return action.next(function(v) {
+  spawn = function(gen, action, cb) {
+    return action._go(function(v) {
       var done, nextAction, ref;
+      if (v instanceof Error) {
+        gen["throw"](v);
+      }
       ref = gen.next(v), nextAction = ref.value, done = ref.done;
       if (done) {
-        return action;
+        return cb(v);
       } else {
-        return spawn(gen, nextAction);
+        return spawn(gen, nextAction, cb);
       }
     });
   };
@@ -370,7 +373,9 @@
     return function() {
       var gen;
       gen = genFn.apply(this, arguments);
-      return spawn(gen, gen.next().value);
+      return new Action(function(cb) {
+        return spawn(gen, gen.next().value, cb);
+      });
     };
   };
 
