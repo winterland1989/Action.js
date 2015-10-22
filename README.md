@@ -2,8 +2,9 @@ Action.js, a sane way to write async code
 =========================================
     
 + [FAQ](#FAQ)
++ [Changelog](#Changelog)
++ [Benchmark](https://github.com/winterland1989/Action.js/wiki/Benchmark)
 + [API document](https://github.com/winterland1989/Action.js/wiki/API-document)
-+ [Difference from Promise](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise)
 + Usage: 
     + `npm i action-js` and `var Action = require('action-js')`.
     + `git clone https://github.com/winterland1989/Action.js.git` and `var Action = require('Action.js')`.
@@ -15,8 +16,8 @@ Action.js, a sane way to write async code
     + [Cancelable](https://github.com/winterland1989/Action.js/wiki/Return-value-of-go) and [retriable](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise) sementics.
     + Bundled with `ajax`, `jsonp` for front-end usage.
 
-Understand Action.js in 5 minutes
----------------------------------
+Understand Action.js
+--------------------
 
 Suppose we want to solve the nest callback problem form scratch, there's an async function called `readFile`, and we want to use it to read `data.txt`, we have to supply a `callback` to it:
 
@@ -40,18 +41,6 @@ var readFileAction = new Action(
     }
 );
 ```
-We have following objects on our heap:
-
-    +----------------+-------+
-    | readFileAction | ._go  | 
-    +----------------+----+--+
-                          |
-                          v
-                    +----------+---------------+
-                    | function(cb)             |
-                    +----------+---------------+   
-                    | readFile("data.txt", cb) |
-                    +--------------------------+
 
 Ok, now we must have a way to extract the action from our `readFileAction`, let's using `readFileAction._go` directly:
 
@@ -117,59 +106,9 @@ readFileAction
 })
 ```
 
-Let's present it in a diagram:
+Each `_next` return a new `Action`, Now if we give the final `Action` a callback with `_go`, the whole callback chain will be fired sequential.
 
-    +----------------+-------+
-    | ActionTwo      | ._go  | 
-    +----------------+----+--+
-                          |
-                          v
-                    +----------+----------------+
-                    | function(cb_)             |
-                    +----------+----------------+  
-                    | cb = function(data){      |
-                    |   console.log(data);      |
-                    |   return length > 0       |
-                    | }                         |
-               +--- + ActionOne._go(            |
-               |    |   function(data){         |
-               |    |     cb_(cb(data))         |
-               |    |   });                     | 
-               |    +---------------------------+
-               |                            
-               v       
-    +----------------+-------+            
-    | ActionOne      | ._go  | 
-    +----------------+----+--+
-                          |
-                          v
-                    +----------+----------------+
-                    | function(cb_)             |
-                    +----------+----------------+  
-                    | cb = function(data){      |
-                    |   return data.length      |
-                    | }                         |
-               +--- + readFileAction._go(       |
-               |    |   function(data){         |
-               |    |     cb_(cb(data))         |
-               |    |   });                     | 
-               |    +---------------------------+
-               |           
-               v          
-    +----------------+-------+
-    | readFileAction | ._go  | 
-    +----------------+----+--+
-                          |
-                          v
-                    +----------+---------------+
-                    | function(cb)             |
-                    +----------+---------------+   
-                    | readFile("data.txt", cb) |
-                    +--------------------------+
-
-`ActionOne` and `ActionTwo` are `Action`s first and second `_next` returned respectively, Now if we give `ActionTwo` a callback with `_go`, the whole callback chain will be fired sequential.
-
-Nice, we just use a simple class with only one field, one very simple functions, the callbacks are now written in a much more readable way, but we have a key problem to be solved yet: what if we want to nest async `Action` inside an `Action`? Turn out with a little modification to our `_next` function, we can handle that:
+Nice, we just use a simple class with only one field, one very simple functions, the callbacks are written in a much more readable way now, but we have a key problem to be solved yet: what if we want to nest async `Action` inside an `Action`? Turn out with a little modification to our `_next` function, we can handle that:
 
 ```js
 Action.prototype._next = function(cb) {
@@ -438,7 +377,10 @@ That's all core functions of `Action` is going to give you, thank you for readin
 
 + Check [API doc](https://github.com/winterland1989/Action.js/wiki/API-document) for interesting things like `Action.parallel`, `Action.race`, `Action.sequence` and `Action.retry`.
 
++ Read [Return value of go](https://github.com/winterland1989/Action.js/wiki/Return-value-of-go) to learn how to cancel an `Action`.
+
 + Read [Difference from Promise](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise) to get a deeper understanding.
+
 
 FAQ<a name="FAQ"></a>
 =====================
@@ -446,7 +388,7 @@ FAQ<a name="FAQ"></a>
 What makes `Action` fast?
 -------------------------
 
-check [Benchmark](https://github.com/winterland1989/Action.js/wiki/Benchmark), even use bluebird's benchmark suit which heavily depend on library's [promisify](https://github.com/petkaantonov/bluebird/blob/master/src/promisify.js#L124) implementation, `Action` can match bluebird's performance.
+Check out [Benchmark](https://github.com/winterland1989/Action.js/wiki/Benchmark), even use bluebird's benchmark suit, which heavily depend on library's [promisify](https://github.com/petkaantonov/bluebird/blob/master/src/promisify.js#L124) implementation, `Action` can match bluebird's performance.
 
 Generally speaking, `Action` simply does less work:
 
@@ -514,3 +456,34 @@ How can i send an `Error` to downstream's `next`
 No, you can't, however, you can receive `Error` from upstream use `_next`, `_go` or `guard`. or you can wrap the `Error` in an `Array` like `[e]`.
 
 The choice of using `Error` to skip `next` and hit `guard` is not arbitrary, instead of creating an `ActionError` class, use `Error` unify type with system runtime, and providing callstack information. And you can now break your program by throwing an Error if you really want to.
+
+Changelog<a name="Changelog"></a>
+================================
+
+v2.0.0
+Update doc, Remove `gapRetry`, since it's just a `retry` compose `delay`. 
+
+v1.4.1
+Run bluebird benchmark, add some optimization.
+
+v1.4.0
+Add Action.co, fix Action.join typos, test cover 100% agian.
+
+v1.3.0
+Add Action.join, optimized internal
+
+v1.2.4
+Improve makeNodeAction
+
+v1.2.3
+Fix responseType related.
+
+v1.2.2
+Auto add header based on data type.
+
+v1.2.1
+Clear some error types.
+
+v1.2.0
+add `param`, `jsonp` and `ajax` for front-end usage.
+

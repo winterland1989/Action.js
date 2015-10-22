@@ -5,7 +5,6 @@ chain = require './chain.coffee'
 race = require './race.coffee'
 delay = require './delay.coffee'
 retry = require './retry.coffee'
-gapRetry = require './gapRetry.coffee'
 parallel = require './parallel.coffee'
 join = require './join.coffee'
 sequence = require './sequence.coffee'
@@ -31,9 +30,6 @@ core
 .next ->
     console.log 'Test Action.retry ======================'
     retry
-.next ->
-    console.log 'Test Action.gapRetry ==================='
-    gapRetry
 .next ->
     console.log 'Test Action.parallel ==================='
     parallel

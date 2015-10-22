@@ -97,12 +97,6 @@ Action.retry = (times, action) ->
         if times-- != 0 then a
         else new Error 'RETRY_ERROR: Retry limit reached'
 
-# retry an Action n times if it failed
-Action.gapRetry = (times, delay, action) ->
-    a = (Action.delay delay, action).guard (e) ->
-        if times-- != 0 then a
-        else new Error 'RETRY_ERROR: Retry limit reached'
-
 # run an Array of Actions in parallel, return an Action wraps results in an Array
 Action.parallel = (actions, stopAtError = false) ->
     l = actions.length

@@ -174,17 +174,6 @@
     });
   };
 
-  Action.gapRetry = function(times, delay, action) {
-    var a;
-    return a = (Action.delay(delay, action)).guard(function(e) {
-      if (times-- !== 0) {
-        return a;
-      } else {
-        return new Error('RETRY_ERROR: Retry limit reached');
-      }
-    });
-  };
-
   Action.parallel = function(actions, stopAtError) {
     var l;
     if (stopAtError == null) {
