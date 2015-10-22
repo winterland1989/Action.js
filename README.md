@@ -13,7 +13,7 @@ Action.js, a sane way to write async code
 + Highlights:
     + [Faster](https://github.com/winterland1989/Action.js/wiki/Benchmark) and simpler(~1kB minified gzipped)
     + Full control capability with `retry`, `parallel`, `race`, `sequence` and more.
-    + [Cancelable](https://github.com/winterland1989/Action.js/wiki/Return-value-of-go) and [retriable](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise) sementics.
+    + [Cancellable](https://github.com/winterland1989/Action.js/wiki/Return-value-of-go) and [retriable](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise) semantics.
     + Bundled with `ajax`, `jsonp` for front-end usage.
 
 Understand Action.js
