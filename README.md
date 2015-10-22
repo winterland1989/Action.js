@@ -12,6 +12,7 @@ Action.js, a sane way to write async code
 + Highlights:
     + [Faster](https://github.com/winterland1989/Action.js/wiki/Benchmark) and simpler(~1kB minified gzipped)
     + Full control capability with `retry`, `parallel`, `race`, `sequence` and more.
+    + [Cancelable](https://github.com/winterland1989/Action.js/wiki/Return-value-of-go) and [retriable](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise) sementics.
     + Bundled with `ajax`, `jsonp` for front-end usage.
 
 Understand Action.js in 5 minutes
@@ -442,18 +443,18 @@ That's all core functions of `Action` is going to give you, thank you for readin
 FAQ<a name="FAQ"></a>
 =====================
 
-What makes `Action` faster than `Promise`?
-------------------------------------------
+What makes `Action` fast?
+-------------------------
 
-Because it simply does less work:
+check [Benchmark](https://github.com/winterland1989/Action.js/wiki/Benchmark), even use bluebird's benchmark suit which heavily depend on library's [promisify](https://github.com/petkaantonov/bluebird/blob/master/src/promisify.js#L124) implementation, `Action` can match bluebird's performance.
+
+Generally speaking, `Action` simply does less work:
 
 + It doesn't maintain any internal state.
 
 + It just have a single field, which is a reference to a function.
 
 + It just add a redirect call to original callback, and some type checking.
-
-I even be amazed it can achieve so much functionality with such short code myself, see [Benchmark](https://github.com/winterland1989/Action.js/wiki/Benchmark) youself.
 
 Why following code doesn't work?
 --------------------------------
@@ -462,6 +463,7 @@ Why following code doesn't work?
 var fileA = readFileAction
 .go(processOne)
 
+// Error, fileA is not an Action anymore
 fileA
 .next(processTwo)
 .go()
@@ -492,34 +494,23 @@ When to use this library?
 
 With `Promise` added to ES6 and ES7 `async/await` proposal, one must ask, why another library to do the same things again?
 
-I actually can add generator support with something like `Action.async` when ES6 come to most browser, but i can see future will be full of `async` functions all over the place, use this library if you:
+Actually `Action` have a [very elegant `Action.co` implementation](https://github.com/winterland1989/Action.js/blob/master/Action.coffee#L205) to work with generators, nevertheless, use this library if you:
 
-+ Have a FP background, you must find all i have done is porting the `Cont` monad from Haskell, and i believe you have divided your program into many composable functions already, just connect them with `next`.
++ Want something small, fast and memory effient in browser, Action.js even have `ajax/jsonp` bundled.
 
-+ Want something small and memory effient in browser.
-
-+ Want to control exactly when the action will run, with `Promise`, all action run in next tick, While with `Action`, action runs when you call `go`, `_go` or `Action.freeze`. 
++ Want manage cancelable actions, read the [Return value of go](https://github.com/winterland1989/Action.js/wiki/Return-value-of-go) to get a elegant solution to cancelable actions.
 
 + Want a different sementics, with `Promise`, you just can't reuse your callback chain, you have to create a new `Promise`, with `Action`, just `go` again, never waste memory on GC. 
 
-    Consider following code, and try to rewrite it with `Promise`:
++ Want to control exactly when the action will run, with `Promise`, all action run in next tick, While with `Action`, action runs when you call `go`, `_go` or `Action.freeze`. 
 
-    ```js
-    Action.retry = function(times, action) {
-        var a;
-        return a = action.guard(function(e) {
-            if (times-- !== 0) {
-                return a;
-            } else {
-                return new Error('RETRY_ERROR: Retry limit reached');
-            }
-        });
-    };
-    ```
++ Want raw speed, this is somehow not really an issue, most of the time, `Promise` or `Action` won't affect that much, and on node we have heavily v8-optimized bluebird, nevertheless, `Action.js` can guarantee speed close to handroll callbacks in any runtime, just much cleaner.
 
-+ Want raw speed, this is somehow not really an issue, most of the time, `Promise` or `Action` won't affect that much, nevertheless, `Action.js` can guarantee speed close to handroll callbacks, just much cleaner.
+If you have a FP background, you must find all i have done is porting the `Cont` monad from Haskell, and i believe you have divided your program into many composable functions already, just connect them with `next`.
 
 How can i send an `Error` to downstream's `next`
 ------------------------------------------------
 
-No, you can't, you have to wrap it in a `Array` or `Object` or `Map`...whatever, the choice of using `Error` to skip `next` and hit `guard` is not arbitrary, instead of creating an `ActionError` class, use `Error` unify type with system runtime, and providing callstack information.
+No, you can't, however, you can receive `Error` from upstream use `_next`, `_go` or `guard`. or you can wrap the `Error` in an `Array` like `[e]`.
+
+The choice of using `Error` to skip `next` and hit `guard` is not arbitrary, instead of creating an `ActionError` class, use `Error` unify type with system runtime, and providing callstack information. And you can now break your program by throwing an Error if you really want to.

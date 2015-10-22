@@ -184,29 +184,34 @@ Action.sequence = (actions, stopAtError = false) ->
         else cb results
 
 # Helpers for makeNodeAction
-appendArgs = (target, appendee) ->
-    l = target.length
-    returns = new Array(l + 1)
-    returns[l] = appendee
-    while l-- > 0
-        returns[l] = target[l]
-    returns
-
 makeNodeCb = (cb) -> (err, data) ->
     cb if err then err else data
 
 # make an Action from a node style function
-Action.makeNodeAction = (nodeAPI) -> () ->
+Action.makeNodeAction = (nodeAPI) -> (a,b,c) ->
     self = @
-    args = arguments
-    new Action (cb) ->
-        nodeAPI.apply self, appendArgs(args, makeNodeCb(cb))
+    l = arguments.length
+    switch l
+        # from bluebird, thess make function call faster
+        when 0 then _go = (cb) -> nodeAPI.call(self,makeNodeCb(cb))
+        when 1 then _go = (cb) -> nodeAPI.call(self,a,makeNodeCb(cb))
+        when 2 then _go = (cb) -> nodeAPI.call(self,a,b,makeNodeCb(cb))
+        when 3 then _go = (cb) -> nodeAPI.call(self,a,b,c,makeNodeCb(cb))
+        else
+            i = l
+            args = new Array(l+1)
+            while i-- > 0
+                args[i] = arguments[i]
+            _go = (cb) ->
+                args[l] = makeNodeCb cb
+                nodeAPI.apply self, args
+    new Action _go
 
 # Helpers for Action.co
 spawn = (gen, action) ->
     action.next (v) ->
         {value: nextAction, done: done} = gen.next(v)
-        if !done then spawn(gen, nextAction) else action
+        if done then action else spawn(gen, nextAction)
 
 # use generator's yeild to wait on Actions
 Action.co = (genFn) -> () ->

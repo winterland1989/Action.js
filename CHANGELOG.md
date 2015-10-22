@@ -1,3 +1,6 @@
+v1.4.1
+Run bluebird benchmark, add some optimization.
+
 v1.4.0
 Add Action.co, fix Action.join typos, test cover 100% agian.
 

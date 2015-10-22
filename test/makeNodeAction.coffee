@@ -5,7 +5,7 @@ fs = require 'fs'
 module.exports =
     new Action (cb) ->
         readFileAction = Action.makeNodeAction fs.readFile
-        console.log 'Reading bench.coffee without encoding'
+        console.log 'Reading test.coffee without encoding'
         readFileAction (__dirname + '/test.coffee')
         .next (data) ->
             assertData (data instanceof Buffer),  true
@@ -16,7 +16,7 @@ module.exports =
     .next ->
         new Action (cb) ->
             readFileAction = Action.makeNodeAction fs.readFile
-            console.log 'Reading bench.coffee with encoding'
+            console.log 'Reading test.coffee with encoding'
             readFileAction (__dirname + '/test.coffee'), encoding: 'utf8'
             .next (data) ->
                 assertData (typeof data), 'string'
