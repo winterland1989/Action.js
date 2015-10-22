@@ -446,10 +446,10 @@ fileA
 
 <ul>
 <li><p>Want something small, fast and memory effient in browser, Action.js even have <code>ajax/jsonp</code> bundled.</p></li>
-<li><p>Want manage cancelable actions, read the <a href="https://github.com/winterland1989/Action.js/wiki/Return-value-of-go">Return value of go</a> to get a elegant solution to cancelable actions.</p></li>
+<li><p>Want manage cancellable actions, read the <a href="https://github.com/winterland1989/Action.js/wiki/Return-value-of-go">Return value of go</a> to get an elegant solution to cancellable actions.</p></li>
 <li><p>Want a different sementics, with <code>Promise</code>, you just can't reuse your callback chain, you have to create a new <code>Promise</code>, with <code>Action</code>, just <code>go</code> again, never waste memory on GC. </p></li>
 <li><p>Want to control exactly when the action will run, with <code>Promise</code>, all action run in next tick, While with <code>Action</code>, action runs when you call <code>go</code>, <code>_go</code> or <code>Action.freeze</code>. </p></li>
-<li><p>Want raw speed, this is somehow not really an issue, most of the time, <code>Promise</code> or <code>Action</code> won't affect that much, and on node we have heavily v8-optimized bluebird, nevertheless, <code>Action.js</code> can guarantee speed close to handroll callbacks in any runtime, just much cleaner.</p></li>
+<li><p>Want raw speed, this is somehow not really an issue, most of the time <code>Promise</code> or <code>Action</code> won't affect that much, and on node we have heavily v8-optimized bluebird, nevertheless, <code>Action.js</code> can guarantee speed close to handroll callbacks in any runtime, just much cleaner.</p></li>
 </ul>
 
 <p>If you have a FP background, you must find all i have done is porting the <code>Cont</code> monad from Haskell, and i believe you have divided your program into many composable functions already, just connect them with <code>next</code>.</p>
