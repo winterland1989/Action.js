@@ -440,13 +440,13 @@ Actually `Action` have a [very elegant `Action.co` implementation](https://githu
 
 + Want something small, fast and memory effient in browser, Action.js even have `ajax/jsonp` bundled.
 
-+ Want manage cancelable actions, read the [Return value of go](https://github.com/winterland1989/Action.js/wiki/Return-value-of-go) to get a elegant solution to cancelable actions.
++ Want manage cancellable actions, read the [Return value of go](https://github.com/winterland1989/Action.js/wiki/Return-value-of-go) to get an elegant solution to cancellable actions.
 
 + Want a different sementics, with `Promise`, you just can't reuse your callback chain, you have to create a new `Promise`, with `Action`, just `go` again, never waste memory on GC. 
 
 + Want to control exactly when the action will run, with `Promise`, all action run in next tick, While with `Action`, action runs when you call `go`, `_go` or `Action.freeze`. 
 
-+ Want raw speed, this is somehow not really an issue, most of the time, `Promise` or `Action` won't affect that much, and on node we have heavily v8-optimized bluebird, nevertheless, `Action.js` can guarantee speed close to handroll callbacks in any runtime, just much cleaner.
++ Want raw speed, this is somehow not really an issue, most of the time `Promise` or `Action` won't affect that much, and on node we have heavily v8-optimized bluebird, nevertheless, `Action.js` can guarantee speed close to handroll callbacks in any runtime, just much cleaner.
 
 If you have a FP background, you must find all i have done is porting the `Cont` monad from Haskell, and i believe you have divided your program into many composable functions already, just connect them with `next`.
 
