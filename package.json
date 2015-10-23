@@ -1,6 +1,6 @@
 {
   "name": "action-js",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "a sane way to write async code",
   "main": "Action.js",
   "directories": {
@@ -15,6 +15,7 @@
   },
   "keywords": [
     "action",
+    "continuation",
     "async",
     "cps",
     "callback",

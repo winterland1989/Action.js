@@ -185,30 +185,27 @@
         var action, countDown, fireByIndex, i, j, len, results;
         countDown = l;
         results = new Array(countDown);
-        fireByIndex = function(action, index) {
-          return action._go(function(data) {
-            countDown--;
+        fireByIndex = function(index) {
+          return function(data) {
             if ((data instanceof Error) && stopAtError) {
-              if (typeof cb === "function") {
-                cb(data);
-              }
-              return cb = void 0;
+              cb(data);
+              return countDown = -1;
             } else {
               results[index] = data;
-              if (countDown === 0) {
+              if (--countDown === 0) {
                 return cb(results);
               }
             }
-          });
+          };
         };
         for (i = j = 0, len = actions.length; j < len; i = ++j) {
           action = actions[i];
-          fireByIndex(action, i);
+          action._go(fireByIndex(i));
         }
         return void 0;
       });
     } else {
-      return Action.wrap(results);
+      return Action.wrap([]);
     }
   };
 

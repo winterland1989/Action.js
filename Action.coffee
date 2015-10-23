@@ -104,20 +104,18 @@ Action.parallel = (actions, stopAtError = false) ->
         new Action (cb) ->
             countDown = l
             results = new Array(countDown)
-            fireByIndex = (action, index) ->
-                action._go (data) ->
-                    countDown--
-                    if (data instanceof Error) and stopAtError
-                        cb?(data)
-                        cb = undefined
-                    else
-                        results[index] = data
-                        if countDown == 0 then cb results
+            fireByIndex = (index) -> (data) ->
+                if (data instanceof Error) and stopAtError
+                    cb(data)
+                    countDown = -1
+                else
+                    results[index] = data
+                    if --countDown == 0 then cb results
             for action, i in actions
-                fireByIndex action, i
+                action._go fireByIndex(i)
             # avoid allocating an Array holding returns
             undefined
-    else Action.wrap results
+    else Action.wrap []
 
 # join two Actions together
 Action.join = (action1, action2, cb2) ->

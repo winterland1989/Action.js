@@ -1,5 +1,5 @@
-Action.js, a sane way to write async code
-=========================================
+Action.js, a fast, small, full feature async library
+====================================================
     
 + [FAQ](#FAQ)
 + [Changelog](#Changelog)
@@ -11,8 +11,8 @@ Action.js, a sane way to write async code
     + Add a script tag and use `window.Action`.
 
 + Highlights:
-    + [Faster](https://github.com/winterland1989/Action.js/wiki/Benchmark) and simpler(~1kB minified gzipped)
-    + Full control capability with `retry`, `parallel`, `race`, `sequence` and more.
+    + [Fast](https://github.com/winterland1989/Action.js/wiki/Benchmark) and small(~1kB minified gzipped)
+    + Full feature APIs like `retry`, `parallel`, `race`, `sequence` and more, also have `co` to work with generator functions.
     + [Cancellable](https://github.com/winterland1989/Action.js/wiki/Return-value-of-go) and [retriable](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise) semantics.
     + Bundled with `ajax`, `jsonp` for front-end usage.
 
@@ -42,7 +42,7 @@ var readFileAction = new Action(
 );
 ```
 
-Ok, now we must have a way to extract the action from our `readFileAction`, let's using `readFileAction._go` directly:
+Ok, now we provide a callback to `readFileAction._go`:
 
 ```js
 readFileAction._go(function(data){
@@ -58,7 +58,9 @@ readFile("data.txt", function(data){
 });
 ```
 
-Just with one difference, we seperate action creation(wrap `readFile` in `new Action`) and application(supply a callback to `_go`), Now we want to chain more callbacks in Promise `then` style:
+Just with one difference, we seperate action creation(wrap `readFile` in `new Action`) and application(supply a callback to `_go`), that's the core idea of `Action`, **Actions wrap functions which waiting for callback inside**. 
+
+Now we want to chain more callbacks in Promise `then` style:
 
 ```js
 Action.prototype._next = function(cb) {
@@ -287,9 +289,9 @@ apiReturnAction('...')._go(function(data){
 
 ```
 
-Yeah, it does work(and sometimes you want it work in this way), but:
+Yeah, it does work(and often you want it work in this way), but:
 
-+ we don't want to force our user to supply a `cb` like above.
++ sometime we don't want to supply a `cb`.
 
 + we should throw `Error` in case user didn't `guard` them.
 
@@ -459,6 +461,9 @@ The choice of using `Error` to skip `next` and hit `guard` is not arbitrary, ins
 
 Changelog<a name="Changelog"></a>
 ================================
+
+v2.1.1
+Fix a bug of `Action.parallel`, add test. 
 
 v2.1.0
 Change `Action.co` into more async-await style, you can use try-catch to catch `Error`s now.  
