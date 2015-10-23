@@ -29,7 +29,7 @@
       </header>
       <section>
         <h1>
-<a id="actionjs-a-sane-way-to-write-async-code" class="anchor" href="#actionjs-a-sane-way-to-write-async-code" aria-hidden="true"><span class="octicon octicon-link"></span></a>Action.js, a sane way to write async code</h1>
+<a id="actionjs-a-fast-small-full-feature-async-library" class="anchor" href="#actionjs-a-fast-small-full-feature-async-library" aria-hidden="true"><span class="octicon octicon-link"></span></a>Action.js, a fast, small, full feature async library</h1>
 
 <ul>
 <li><a href="#FAQ">FAQ</a></li>
@@ -52,8 +52,8 @@
 
 <ul>
 <li>
-<a href="https://github.com/winterland1989/Action.js/wiki/Benchmark">Faster</a> and simpler(~1kB minified gzipped)</li>
-<li>Full control capability with <code>retry</code>, <code>parallel</code>, <code>race</code>, <code>sequence</code> and more.</li>
+<a href="https://github.com/winterland1989/Action.js/wiki/Benchmark">Fast</a> and small(~1kB minified gzipped)</li>
+<li>Full feature APIs like <code>retry</code>, <code>parallel</code>, <code>race</code>, <code>sequence</code> and more, also have <code>co</code> to work with generator functions.</li>
 <li>
 <a href="https://github.com/winterland1989/Action.js/wiki/Return-value-of-go">Cancellable</a> and <a href="https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise">retriable</a> semantics.</li>
 <li>Bundled with <code>ajax</code>, <code>jsonp</code> for front-end usage.</li>
@@ -83,7 +83,7 @@ readFile(<span class="pl-s"><span class="pl-pds">"</span>data.txt<span class="pl
     }
 );</pre></div>
 
-<p>Ok, now we must have a way to extract the action from our <code>readFileAction</code>, let's using <code>readFileAction._go</code> directly:</p>
+<p>Ok, now we provide a callback to <code>readFileAction._go</code>:</p>
 
 <div class="highlight highlight-source-js"><pre>readFileAction._go(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
     <span class="pl-en">console</span>.<span class="pl-c1">log</span>(data);
@@ -95,7 +95,9 @@ readFile(<span class="pl-s"><span class="pl-pds">"</span>data.txt<span class="pl
     <span class="pl-en">console</span>.<span class="pl-c1">log</span>(data);
 });</pre></div>
 
-<p>Just with one difference, we seperate action creation(wrap <code>readFile</code> in <code>new Action</code>) and application(supply a callback to <code>_go</code>), Now we want to chain more callbacks in Promise <code>then</code> style:</p>
+<p>Just with one difference, we seperate action creation(wrap <code>readFile</code> in <code>new Action</code>) and application(supply a callback to <code>_go</code>), that's the core idea of <code>Action</code>, <strong>Actions wrap functions which waiting for callback inside</strong>. </p>
+
+<p>Now we want to chain more callbacks in Promise <code>then</code> style:</p>
 
 <div class="highlight highlight-source-js"><pre><span class="pl-c1">Action</span>.<span class="pl-c1">prototype</span>.<span class="pl-en">_next</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">cb</span>) {
     <span class="pl-k">var</span> _go <span class="pl-k">=</span> <span class="pl-v">this</span>._go;
@@ -304,10 +306,10 @@ readFileAction
 });
 </pre></div>
 
-<p>Yeah, it does work(and sometimes you want it work in this way), but:</p>
+<p>Yeah, it does work(and often you want it work in this way), but:</p>
 
 <ul>
-<li><p>we don't want to force our user to supply a <code>cb</code> like above.</p></li>
+<li><p>sometime we don't want to supply a <code>cb</code>.</p></li>
 <li><p>we should throw <code>Error</code> in case user didn't <code>guard</code> them.</p></li>
 </ul>
 
@@ -465,6 +467,12 @@ fileA
 <h1>
 <a id="changelog" class="anchor" href="#changelog" aria-hidden="true"><span class="octicon octicon-link"></span></a>Changelog<a name="Changelog"></a>
 </h1>
+
+<p>v2.1.1
+Fix a bug of <code>Action.parallel</code>, add test. </p>
+
+<p>v2.1.0
+Change <code>Action.co</code> into more async-await style, you can use try-catch to catch <code>Error</code>s now.  </p>
 
 <p>v2.0.0
 Update doc, Remove <code>gapRetry</code>, since it's just a <code>retry</code> compose <code>delay</code>. </p>
