@@ -11,7 +11,7 @@ Action.js, a fast, small, full feature async library
     + Add a script tag and use `window.Action`.
 
 + Highlights:
-    + [Fast](https://github.com/winterland1989/Action.js/wiki/Benchmark) and small(~1kB minified gzipped)
+    + [Fast](https://github.com/winterland1989/Action.js/wiki/Benchmark) and small(5.4k/minified 1.9k/gzipped)
     + Full feature APIs like `retry`, `parallel`, `race`, `sequence` and more, also have `co` to work with generator functions.
     + [Cancellable](https://github.com/winterland1989/Action.js/wiki/Return-value-of-go) and [retriable](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise) semantics.
     + Bundled with `ajax`, `jsonp` for front-end usage.
@@ -80,13 +80,13 @@ Let's break down `_next` a little here:
 
 + When the new `Action` fired with `_cb`, the original `Action`'s action will be fired first, and send the value to `cb`.
 
-+ We apply `cb` with `data` from the original `Action`
++ We apply `cb` with `data` from the original `Action`.
 
 + Then we send the `_data` produced by `cb(data)` to `_cb`.
 
 + The order is (original `Action`'s `_go`) --> (`cb` which `_next` received) --> (`_cb` we give to our new `Action`).
 
-+ Since we haven't fired our new `Action` yet, we haven't send the `_cb`, the whole callback chain is saved in our new `Action`.
++ Since we haven't fired our new `Action` yet, we haven't got the `_cb`, the whole callback chain is saved in our new `Action`.
 
 With our `_next`, we can chain multiply callbacks and pass data between them:
 
@@ -110,7 +110,7 @@ readFileAction
 
 Each `_next` return a new `Action`, Now if we give the final `Action` a callback with `_go`, the whole callback chain will be fired sequential.
 
-Nice, we just use a simple class with only one field, one very simple functions, the callbacks are written in a much more readable way now, but we have a key problem to be solved yet: what if we want to nest async `Action` inside an `Action`? Turn out with a little modification to our `_next` function, we can handle that:
+Nice, we just use a very simple class, one very simple functions, the callbacks are written in a much more readable way now, but we have a key problem to be solved yet: what if we want to nest async `Action` inside an `Action`? Turn out with a little modification to our `_next` function, we can handle that:
 
 ```js
 Action.prototype._next = function(cb) {
@@ -171,6 +171,8 @@ One biggest issue with `Promise` is that error handleing is somewhat magic and c
 + It will eat your error sliently if you don't supply a `catch` at the end of the chain.
 
 + You have to use two different functions, `resolve` to pass value to the callbacks and `reject` to skip them, what will happen if you `throw` an `Error`, well, just the same as `reject`.
+
++ You lost the ability to break your program by throwing, sometime you do need it.
 
 What we can do to make it simpler? It's a complex problem, we start solving it by simplify it: **Action.js use `Error` type as a special type to pass error information to the downstream**, what does this mean?
 
@@ -358,7 +360,7 @@ new Action(function(cb){
     });
 })
 .next(
-    safe( new Error("PROCESS_ERROR_XXX: process xxx failed when xxx")
+    safe(new Error("PROCESS_ERROR_XXX: process xxx failed when xxx")
         , someProcessMayWentWrong)
 )
 .next(...)
@@ -379,10 +381,9 @@ That's all core functions of `Action` is going to give you, thank you for readin
 
 + Check [API doc](https://github.com/winterland1989/Action.js/wiki/API-document) for interesting things like `Action.parallel`, `Action.race`, `Action.sequence` and `Action.retry`.
 
-+ Read [Return value of go](https://github.com/winterland1989/Action.js/wiki/Return-value-of-go) to learn how to cancel an `Action`.
-
 + Read [Difference from Promise](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise) to get a deeper understanding.
 
++ Read [Return value of go](https://github.com/winterland1989/Action.js/wiki/Return-value-of-go) to learn how to cancel an `Action`.
 
 FAQ<a name="FAQ"></a>
 =====================
@@ -413,7 +414,7 @@ fileA
 .go()
 ```
 
-Well, read [Difference from Promise](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise) to get a detailed answer, tl,dr... here is the short answer:
+Well, read [Difference from Promise](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise) and [Return value of go](https://github.com/winterland1989/Action.js/wiki/Return-value-of-go) to get a detailed answer, tl,dr... here is the short answer:
 
 ```js
 // readFile now and return a Action, this function won't block
@@ -431,14 +432,14 @@ fileA
 .go()
 ```
 
-If you want have a `Promise` behavior(fire and memorize), use `Action.freeze`, `go` won't return a new `Action`.
+If you want have a `Promise` behavior(fire and memorize), use `Action.freeze`, `go` won't return a new `Action`, instead `go` return a cancel handler if underline action can be cancelled.
 
 When to use this library?
 -------------------------
 
 With `Promise` added to ES6 and ES7 `async/await` proposal, one must ask, why another library to do the same things again?
 
-Actually `Action` have a [very elegant `Action.co` implementation](https://github.com/winterland1989/Action.js/blob/master/Action.coffee#L205) to work with generators, nevertheless, use this library if you:
+Because `Action` is not `Promise`, It's a faster, simpler and full feature alternative comes with more flexible semantics. Actually `Action` have a [very elegant `Action.co` implementation](https://github.com/winterland1989/Action.js/blob/master/Action.coffee#L205) to work with generators, nevertheless, use this library if you:
 
 + Want something small, fast and memory effient in browser, Action.js even have `ajax/jsonp` bundled.
 
@@ -448,19 +449,22 @@ Actually `Action` have a [very elegant `Action.co` implementation](https://githu
 
 + Want to control exactly when the action will run, with `Promise`, all action run in next tick, While with `Action`, action runs when you call `go`, `_go` or `Action.freeze`. 
 
-+ Want raw speed, this is somehow not really an issue, most of the time `Promise` or `Action` won't affect that much, and on node we have heavily v8-optimized bluebird, nevertheless, `Action.js` can guarantee speed close to handroll callbacks in any runtime, just much cleaner.
++ Want raw speed, this is somehow not really an issue, most of the time `Promise` or `Action` won't affect that much, nevertheless, `Action.js` can guarantee speed close to handroll callbacks in any runtime, just much cleaner.
 
 If you have a FP background, you must find all i have done is porting the `Cont` monad from Haskell, and i believe you have divided your program into many composable functions already, just connect them with `next`.
 
 How can i send an `Error` to downstream's `next`
 ------------------------------------------------
 
-No, you can't, however, you can receive `Error` from upstream use `_next`, `_go` or `guard`. or you can wrap the `Error` in an `Array` like `[e]`.
+No, you can't, however, you can receive `Error` from upstream use `_next`, `_go` or `guard`. or you can wrap the `Error` in an `Array` like `[e]`, it's a very rare situation one want to process a `Error` value like normal values.
 
 The choice of using `Error` to skip `next` and hit `guard` is not arbitrary, instead of creating an `ActionError` class, use `Error` unify type with system runtime, and providing callstack information. And you can now break your program by throwing an Error if you really want to.
 
 Changelog<a name="Changelog"></a>
 ================================
+
+v2.2.0
+`Action.join`, `Action.parallel`, `Action.race` now return an `Array` of cancel handler when the composed `Action` fired, you can now cancel them with ease. 
 
 v2.1.1
 Fix a bug of `Action.parallel`, add test. 

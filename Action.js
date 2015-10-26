@@ -57,8 +57,8 @@
       return this._go(function(data) {
         if (data instanceof Error) {
           throw data;
-        } else if (cb != null) {
-          return cb(data);
+        } else {
+          return typeof cb === "function" ? cb(data) : void 0;
         }
       });
     };
@@ -182,13 +182,17 @@
     l = actions.length;
     if (l > 0) {
       return new Action(function(cb) {
-        var action, countDown, fireByIndex, i, j, len, results;
+        var action, countDown, fireByIndex, i, j, len, results, returns;
         countDown = l;
         results = new Array(countDown);
+        returns = new Array(countDown);
         fireByIndex = function(index) {
           return function(data) {
             if ((data instanceof Error) && stopAtError) {
-              cb(data);
+              if (typeof cb === "function") {
+                cb(data);
+              }
+              cb = void 0;
               return countDown = -1;
             } else {
               results[index] = data;
@@ -200,9 +204,9 @@
         };
         for (i = j = 0, len = actions.length; j < len; i = ++j) {
           action = actions[i];
-          action._go(fireByIndex(i));
+          returns[i] = action._go(fireByIndex(i));
         }
-        return void 0;
+        return returns;
       });
     } else {
       return Action.wrap([]);
@@ -210,42 +214,44 @@
   };
 
   Action.join = function(action1, action2, cb2) {
+    var returns;
+    returns = new Array(2);
     return new Action(function(cb) {
       var countDown, result1, result2;
       result1 = result2 = void 0;
       countDown = 2;
-      action1._go(function(data) {
+      returns[0] = action1._go(function(data) {
         result1 = data;
         countDown--;
         if (countDown === 0) {
           return fireByResult(cb, cb2(result1, result2));
         }
       });
-      action2._go(function(data) {
+      returns[1] = action2._go(function(data) {
         result2 = data;
         countDown--;
         if (countDown === 0) {
           return fireByResult(cb, cb2(result1, result2));
         }
       });
-      return void 0;
+      return returns;
     });
   };
 
   Action.race = function(actions, stopAtError) {
+    var l;
     if (stopAtError == null) {
       stopAtError = false;
     }
-    return new Action(function(cb) {
-      var action, countDown, i, j, len, results1;
-      countDown = actions.length;
-      if (countDown === 0) {
-        return cb(new Error('RACE_ERROR: All actions failed'));
-      } else {
-        results1 = [];
+    l = actions.length;
+    if (l > 0) {
+      return new Action(function(cb) {
+        var action, countDown, i, j, len, returns;
+        countDown = l;
+        returns = new Array(l);
         for (i = j = 0, len = actions.length; j < len; i = ++j) {
           action = actions[i];
-          action._go(function(data) {
+          returns[i] = action._go(function(data) {
             countDown--;
             if ((!(data instanceof Error)) || stopAtError) {
               if (typeof cb === "function") {
@@ -257,11 +263,12 @@
               return cb(new Error('RACE_ERROR: All actions failed'));
             }
           });
-          results1.push(void 0);
         }
-        return results1;
-      }
-    });
+        return returns;
+      });
+    } else {
+      return Action.wrap(new Error('RACE_ERROR: All actions failed'));
+    }
   };
 
   Action.sequence = function(actions, stopAtError) {

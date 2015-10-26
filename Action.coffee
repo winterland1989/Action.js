@@ -40,7 +40,7 @@ class Action
         @_go (data) ->
             if data instanceof Error
                 throw data
-            else if cb? then cb data
+            else cb?(data)
 
 # wrap a value in an Action
 Action.wrap = (data) ->
@@ -104,52 +104,56 @@ Action.parallel = (actions, stopAtError = false) ->
         new Action (cb) ->
             countDown = l
             results = new Array(countDown)
+            returns = new Array(countDown)
             fireByIndex = (index) -> (data) ->
                 if (data instanceof Error) and stopAtError
-                    cb(data)
+                    cb?(data)
+                    cb = undefined
                     countDown = -1
                 else
                     results[index] = data
                     if --countDown == 0 then cb results
             for action, i in actions
-                action._go fireByIndex(i)
-            # avoid allocating an Array holding returns
-            undefined
+                returns[i] = action._go fireByIndex(i)
+            returns
     else Action.wrap []
 
 # join two Actions together
 Action.join = (action1, action2, cb2) ->
+    returns = new Array(2)
     new Action (cb) ->
         result1 = result2 = undefined
         countDown = 2
-        action1._go (data) ->
+        returns[0] = action1._go (data) ->
             result1 = data
             countDown--
             if countDown == 0
                 fireByResult(cb, (cb2 result1, result2))
-        action2._go (data) ->
+        returns[1] = action2._go (data) ->
             result2 = data
             countDown--
             if countDown == 0
                 fireByResult(cb, (cb2 result1, result2))
-        undefined
+        returns
 
 # run an Array of Actions in parallel, return an Action wraps first result
 Action.race = (actions, stopAtError = false) ->
-    new Action (cb) ->
-        countDown = actions.length
-        if countDown == 0
-            cb new Error 'RACE_ERROR: All actions failed'
-        else for action, i in actions
-            action._go (data) ->
-                countDown--
-                if (data not instanceof Error) or stopAtError
-                    cb?(data)
-                    cb = undefined
-                    countDown = -1
-                else if countDown == 0
-                    cb new Error 'RACE_ERROR: All actions failed'
-            undefined
+    l = actions.length
+    if l > 0
+        new Action (cb) ->
+            countDown = l
+            returns = new Array(l)
+            for action, i in actions
+                returns[i] = action._go (data) ->
+                    countDown--
+                    if (data not instanceof Error) or stopAtError
+                        cb?(data)
+                        cb = undefined
+                        countDown = -1
+                    else if countDown == 0
+                        cb new Error 'RACE_ERROR: All actions failed'
+            returns
+    else Action.wrap new Error 'RACE_ERROR: All actions failed'
 
 # run an Array of Actions in sequence, return an Action wraps results in an Array
 Action.sequence = (actions, stopAtError = false) ->
