@@ -1,4 +1,4 @@
-# auto choose fmap or >>=
+# helper for auto choosing fmap or >>=
 fireByResult = (cb, data) ->
     if data instanceof Action
         data._go cb
@@ -11,16 +11,16 @@ class Action
 
     # return a new Action that when fire, it will call current action first, then the callback
     _next: (cb) ->
-        _go = @_go
+        self = @
         new Action (_cb) ->
-            _go (data) -> fireByResult(_cb, cb(data))
+            self._go (data) -> fireByResult(_cb, cb(data))
 
     # return a new Action that when fire, it will call current action first, then the callback
     # if current action want to pass an error to the callback, stop it and pass it on
     next: (cb) ->
-        _go = @_go
+        self = @
         new Action (_cb) ->
-            _go (data) ->
+            self._go (data) ->
                 if data instanceof Error
                     _cb data
                 else fireByResult _cb, cb(data)
@@ -28,9 +28,9 @@ class Action
     # return a new Action that when fire, it will call current action first, then the callback
     # if current action want to pass a non error value to the callback, stop it and pass it on
     guard: (cb) ->
-        _go = @_go
+        self = @
         new Action (_cb) ->
-            _go (data) ->
+            self._go (data) ->
                 if data instanceof Error
                     fireByResult _cb, cb(data)
                 else _cb data
@@ -155,29 +155,24 @@ Action.race = (actions, stopAtError = false) ->
             returns
     else Action.wrap new Error 'RACE_ERROR: All actions failed'
 
+# helper for step in sequence
+sequenceStep = (countUp, limit, stopAtError, actions, results, cb) ->
+    actions[countUp]._go (data) ->
+        if (data instanceof Error) and stopAtError
+            cb data
+        else
+            results[countUp++] = data
+            if countUp == limit then cb results
+            else sequenceStep countUp, limit, stopAtError, actions, results, cb
+
 # run an Array of Actions in sequence, return an Action wraps results in an Array
 Action.sequence = (actions, stopAtError = false) ->
     l = actions.length
-    chainByIndex = (a, action, index, results) ->
-        a._next (data) ->
-            if (data instanceof Error) and stopAtError
-                data
-            else
-                results[index] = data
-                action
-    new Action (cb) ->
-        results = new Array(l)
-        if l > 0
-            a = actions[0]
-            for action, i in actions[1..]
-                a = chainByIndex(a, action, i, results)
-            a._go (data) ->
-                if (data instanceof Error) and stopAtError
-                        cb data
-                    else
-                        results[l-1] = data
-                        cb results
-        else cb results
+    if l > 0
+        new Action (cb) ->
+            results = new Array(l)
+            sequenceStep 0, l, stopAtError, actions, results, cb
+    else Action.wrap []
 
 # Helpers for makeNodeAction
 makeNodeCb = (cb) -> (err, data) ->
@@ -188,7 +183,7 @@ Action.makeNodeAction = (nodeAPI) -> (a,b,c) ->
     self = @
     l = arguments.length
     switch l
-        # from bluebird, thess make function call faster
+        # from bluebird, these make function call faster
         when 0 then _go = (cb) -> nodeAPI.call(self,makeNodeCb(cb))
         when 1 then _go = (cb) -> nodeAPI.call(self,a,makeNodeCb(cb))
         when 2 then _go = (cb) -> nodeAPI.call(self,a,b,makeNodeCb(cb))
@@ -206,8 +201,7 @@ Action.makeNodeAction = (nodeAPI) -> (a,b,c) ->
 # Helpers for Action.co
 spawn = (gen, action, cb) ->
     action._go (v) ->
-        if v instanceof Error
-            gen.throw v
+        if v instanceof Error then gen.throw v
         {value: nextAction, done: done} = gen.next(v)
         if done then cb v else spawn(gen, nextAction, cb)
 

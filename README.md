@@ -7,11 +7,11 @@ Action.js, a fast, small, full feature async library
 + [API document](https://github.com/winterland1989/Action.js/wiki/API-document)
 + Usage: 
     + `npm i action-js` and `var Action = require('action-js')`.
-    + `git clone https://github.com/winterland1989/Action.js.git` and `var Action = require('Action.js')`.
+    + Clone this repo and use Action.js with AMD or CMD loader, bundler.
     + Add a script tag and use `window.Action`.
 
 + Highlights:
-    + [Fast](https://github.com/winterland1989/Action.js/wiki/Benchmark) and small(5.4k/minified 1.9k/gzipped)
+    + [Fast](https://github.com/winterland1989/Action.js/wiki/Benchmark) and small(5.3k/minified 1.9k/gzipped)
     + Full feature APIs like `retry`, `parallel`, `race`, `sequence` and more, also have `co` to work with generator functions.
     + [Cancellable](https://github.com/winterland1989/Action.js/wiki/Return-value-of-go) and [retriable](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise) semantics.
     + Bundled with `ajax`, `jsonp` for front-end usage.
@@ -447,11 +447,13 @@ Because `Action` is not `Promise`, It's a faster, simpler and full feature alter
 
 + Want a different sementics, with `Promise`, you just can't reuse your callback chain, you have to create a new `Promise`, with `Action`, just `go` again, never waste memory on GC. 
 
-+ Want to control exactly when the action will run, with `Promise`, all action run in next tick, While with `Action`, action runs when you call `go`, `_go` or `Action.freeze`. 
++ Want to control exactly when the action will run, with `Promise`, all action run in next tick, While with `Action`, action runs when you call `go`, `_go` or `Action.freeze`.
 
 + Want raw speed, this is somehow not really an issue, most of the time `Promise` or `Action` won't affect that much, nevertheless, `Action.js` can guarantee speed close to handroll callbacks in any runtime, just much cleaner.
 
 If you have a FP background, you must find all i have done is porting the `Cont` monad from Haskell, and i believe you have divided your program into many composable functions already, just connect them with `next`.
+
+The semantics of `Action` also fit varieties situations like animation and interactive UI, it's far more suitable than `Promise` in these situations.
 
 How can i send an `Error` to downstream's `next`
 ------------------------------------------------
@@ -462,6 +464,9 @@ The choice of using `Error` to skip `next` and hit `guard` is not arbitrary, ins
 
 Changelog<a name="Changelog"></a>
 ================================
+
+v2.3.0
+Now when you construct an `Action`, the `this` variable inside the contination will be the `Action` instance.
 
 v2.2.0
 `Action.join`, `Action.parallel`, `Action.race` now return an `Array` of cancel handler when the composed `Action` fired, you can now cancel them with ease. 
@@ -499,3 +504,15 @@ Clear some error types.
 v1.2.0
 add `param`, `jsonp` and `ajax` for front-end usage.
 
+License
+=======
+
+The MIT License (MIT)
+
+Copyright (c) 2015 Winterland
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
