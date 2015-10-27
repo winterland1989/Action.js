@@ -42,8 +42,7 @@
 <ul>
 <li>
 <code>npm i action-js</code> and <code>var Action = require('action-js')</code>.</li>
-<li>
-<code>git clone https://github.com/winterland1989/Action.js.git</code> and <code>var Action = require('Action.js')</code>.</li>
+<li>Clone this repo and use Action.js with AMD or CMD loader, bundler.</li>
 <li>Add a script tag and use <code>window.Action</code>.</li>
 </ul>
 </li>
@@ -52,7 +51,7 @@
 
 <ul>
 <li>
-<a href="https://github.com/winterland1989/Action.js/wiki/Benchmark">Fast</a> and small(5.4k/minified 1.9k/gzipped)</li>
+<a href="https://github.com/winterland1989/Action.js/wiki/Benchmark">Fast</a> and small(5.3k/minified 1.9k/gzipped)</li>
 <li>Full feature APIs like <code>retry</code>, <code>parallel</code>, <code>race</code>, <code>sequence</code> and more, also have <code>co</code> to work with generator functions.</li>
 <li>
 <a href="https://github.com/winterland1989/Action.js/wiki/Return-value-of-go">Cancellable</a> and <a href="https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise">retriable</a> semantics.</li>
@@ -451,11 +450,13 @@ fileA
 <li><p>Want something small, fast and memory effient in browser, Action.js even have <code>ajax/jsonp</code> bundled.</p></li>
 <li><p>Want manage cancellable actions, read the <a href="https://github.com/winterland1989/Action.js/wiki/Return-value-of-go">Return value of go</a> to get an elegant solution to cancellable actions.</p></li>
 <li><p>Want a different sementics, with <code>Promise</code>, you just can't reuse your callback chain, you have to create a new <code>Promise</code>, with <code>Action</code>, just <code>go</code> again, never waste memory on GC. </p></li>
-<li><p>Want to control exactly when the action will run, with <code>Promise</code>, all action run in next tick, While with <code>Action</code>, action runs when you call <code>go</code>, <code>_go</code> or <code>Action.freeze</code>. </p></li>
+<li><p>Want to control exactly when the action will run, with <code>Promise</code>, all action run in next tick, While with <code>Action</code>, action runs when you call <code>go</code>, <code>_go</code> or <code>Action.freeze</code>.</p></li>
 <li><p>Want raw speed, this is somehow not really an issue, most of the time <code>Promise</code> or <code>Action</code> won't affect that much, nevertheless, <code>Action.js</code> can guarantee speed close to handroll callbacks in any runtime, just much cleaner.</p></li>
 </ul>
 
 <p>If you have a FP background, you must find all i have done is porting the <code>Cont</code> monad from Haskell, and i believe you have divided your program into many composable functions already, just connect them with <code>next</code>.</p>
+
+<p>The semantics of <code>Action</code> also fit varieties situations like animation and interactive UI, it's far more suitable than <code>Promise</code> in these situations.</p>
 
 <h2>
 <a id="how-can-i-send-an-error-to-downstreams-next" class="anchor" href="#how-can-i-send-an-error-to-downstreams-next" aria-hidden="true"><span class="octicon octicon-link"></span></a>How can i send an <code>Error</code> to downstream's <code>next</code>
@@ -468,6 +469,9 @@ fileA
 <h1>
 <a id="changelog" class="anchor" href="#changelog" aria-hidden="true"><span class="octicon octicon-link"></span></a>Changelog<a name="Changelog"></a>
 </h1>
+
+<p>v2.3.0
+Now when you construct an <code>Action</code>, the <code>this</code> variable inside the contination will be the <code>Action</code> instance.</p>
 
 <p>v2.2.0
 <code>Action.join</code>, <code>Action.parallel</code>, <code>Action.race</code> now return an <code>Array</code> of cancel handler when the composed <code>Action</code> fired, you can now cancel them with ease. </p>
@@ -504,6 +508,19 @@ Clear some error types.</p>
 
 <p>v1.2.0
 add <code>param</code>, <code>jsonp</code> and <code>ajax</code> for front-end usage.</p>
+
+<h1>
+<a id="license" class="anchor" href="#license" aria-hidden="true"><span class="octicon octicon-link"></span></a>License</h1>
+
+<p>The MIT License (MIT)</p>
+
+<p>Copyright (c) 2015 Winterland</p>
+
+<p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:</p>
+
+<p>The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.</p>
+
+<p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</p>
       </section>
       <footer>
         <p>This project is maintained by <a href="https://github.com/winterland1989">winterland1989</a></p>
