@@ -15,34 +15,32 @@ Action.js, a fast, small, full feature async library
     + Full feature APIs like `retry`, `parallel`, `race`, `sequence` and more, also have `co` to work with generator functions.
     + [Cancellable](https://github.com/winterland1989/Action.js/wiki/Return-value-of-go) and [retriable](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise) semantics.
     + Bundled with `ajax`, `jsonp` for front-end usage.
+    + [Action.signal](https://github.com/winterland1989/Action.js/wiki/Action.signal) provides easy and composable async UI management.
 
-Understand Action.js
---------------------
+What is `Action`
+----------------
 
-Suppose we want to solve the nest callback problem form scratch, there's an async function called `readFile`, and we want to use it to read `data.txt`, we have to supply a `callback` to it:
-
-```js
-// suppose this simple readFile never fail
-readFile("data.txt", function(data){
-    console.log(data);
-});
-```
-
-Instead we don't give a callback(the `console.log`) to it right now, we save this read action in a new `Action`:
+Interested? `Action` is a fast and clean alternative to `Promise` or `Observable`，Its core is an extremly simple javascript class:
 
 ```js
 var Action = function(go) {
     this._go = go;
 }
-
-var readFileAction = new Action(
-    function(cb){
-        readFile("data.txt", cb);
-    }
-);
 ```
 
-Ok, now we provide a callback to `readFileAction._go`:
+We construct an `Action` by passing a function which consume a callback(aka. contination), take `fs.readFile` as an example:
+
+```js
+// suppose this readFile never fail
+// we will talk error handleing later
+var readFileAction = new Action(function(cb){
+    fs.readFile('data.txt', function(err, data){
+        cb(data);
+    })
+});
+```
+
+Now if we provide a callback to `readFileAction._go`:
 
 ```js
 readFileAction._go(function(data){
@@ -50,7 +48,7 @@ readFileAction._go(function(data){
 })
 ```
 
-What above does is equivalent to what we write at beginning, right?:
+The callback chain will be fired, it's equivalent to following code:
 
 ```js
 readFile("data.txt", function(data){
@@ -58,9 +56,9 @@ readFile("data.txt", function(data){
 });
 ```
 
-Just with one difference, we seperate action creation(wrap `readFile` in `new Action`) and application(supply a callback to `_go`), that's the core idea of `Action`, **Actions wrap functions which waiting for callback inside**. 
+With one difference, `Action` seperate contination creation(wrap `readFile` in `new Action`) and application(supply a callback to `_go`), that's the core idea of `Action`, **an Action always wrap a contination inside**. 
 
-Now we want to chain more callbacks in Promise `then` style:
+Now we can add a method to compose another callback with this contination:
 
 ```js
 Action.prototype._next = function(cb) {
@@ -80,9 +78,7 @@ Let's break down `_next` a little here:
 
 + When the new `Action` fired with `_cb`, the original `Action`'s action will be fired first, and send the value to `cb`.
 
-+ We apply `cb` with `data` from the original `Action`.
-
-+ Then we send the `_data` produced by `cb(data)` to `_cb`.
++ We apply `cb` with `data` from the original `Action`, then send the `_data` produced by `cb(data)` to `_cb`.
 
 + The order is (original `Action`'s `_go`) --> (`cb` which `_next` received) --> (`_cb` we give to our new `Action`).
 
@@ -108,7 +104,7 @@ readFileAction
 })
 ```
 
-Each `_next` return a new `Action`, Now if we give the final `Action` a callback with `_go`, the whole callback chain will be fired sequential.
+Each `_next` return a new `Action`, now if we give the final `Action` a callback with `_go`, the whole callback chain will be fired sequential.
 
 Nice, we just use a very simple class, one very simple functions, the callbacks are written in a much more readable way now, but we have a key problem to be solved yet: what if we want to nest async `Action` inside an `Action`? Turn out with a little modification to our `_next` function, we can handle that:
 
@@ -144,8 +140,8 @@ readFileAction
 })
 ```
 
-Now we can say we have solved the callback hell problem! Well, actually just 50% of it.
-Before we proceed another 50%, one important thing to keep in mind: **an `Action` is not a `Promise`, it will not happen if you don't fire it with `_go`, and it can be fired multiple times, it's just a reference to a wrapped function**:
+Now we have solved the callback hell problem! Well, actually just 50% of it.
+Before we proceed another 50%, one important thing to keep in mind: **an `Action` is not a `Promise`, it will not happen if you don't pass a callback to `_go`, and it can be fired multiple times, it's just a reference to a wrapped contination**:
 
 ```js
 readFileAction
@@ -196,15 +192,15 @@ Action.prototype.next = function(cb) {
 };
 ```
 
-Here, let me present the final version of our `next` function, comparing to `_next` we write before, can you see what's the different? 
+Here, let me present the final version of our `next` function, comparing to `_next` we write before:
 
 + It still reture a new `Action`, when it fired, the original action are called.
 
 + We checked if the `data` coming from upstream is `instanceof Error`, if it's not, everything as usual, we feed it to `cb` that `next` received.
 
-+ But if it's an `Error`, we skip `cb`, pass it to a future `_cb`, which we don't have now.
++ But if it's an `Error`, we skip `cb`, pass it to `_cb` which we don't have now.
 
-`next` ensure the `cb` it received, **will never receive an `Error`**, we just skip `cb` and pass `Error` downstream, Symmetrically, we define a function which only deal with `Error`, and let normal values pass:
+`next` ensure the `cb` it received, **will never receive an `Error`**, we just skip `cb` and pass `Error` downstream, symmetrically, we define a function which only deal with `Error`, and let normal values pass:
 
 ```js
 Action.prototype.guard = function(cb) {
@@ -226,7 +222,7 @@ Action.prototype.guard = function(cb) {
 };
 ```
 
-This time, we know the `cb` that `guard` received are prepared for `Error` values, so we flip the logic, you can also return an `Action` if your need some async code to deal with the `Error`.
+This time, the `cb` that `guard` received are prepared for `Error` values, so we flip the logic, you can also return an `Action` if your need some async code to deal with the `Error`.
 
 Following code demonstrate how to use our `next` and `guard`:
 
@@ -276,7 +272,7 @@ The final result will be produced by `anotherProcess` if `someProcessMayWentWron
 
 You can place `guard` in the middle of the chain, all `Errors` before it will be handled by it, and the value it produced, sync or async, will be passed to the rest of the chain.
 
-So, what if we don't supply a `guard`? Since we have to supply a callback to `_go`, we can check if the final result is an `Error` or not like this:
+What if we don't supply a `guard`? Since we have to supply a callback to `_go`, we can check if the final result is an `Error` or not like this:
 
 ```js
 apiReturnAction('...')._go(function(data){
@@ -291,7 +287,7 @@ apiReturnAction('...')._go(function(data){
 
 ```
 
-Yeah, it does work(and often you want it work in this way), but:
+Yeah, it does work, and often you want it work in this way, but:
 
 + sometime we don't want to supply a `cb`.
 
@@ -330,7 +326,7 @@ new Action(function(cb){
 
 ```
 
-Finally, to ease error management, and to attack the [v8 optimization problems](https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#2-unsupported-syntax). We recommand using `Action.safe`:
+Finally, to ease error management, and attack the [v8 optimization problems](https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#2-unsupported-syntax). We recommand using `Action.safe`:
 
 ```js
 // this small function minimize v8 try-catch overhead
@@ -346,7 +342,7 @@ Action.safe = function(err, fn) {
 };
 ```
 
-And use `safe` wrap your `someProcessMayWentWrong` like this:
+Use `safe` wrap your `someProcessMayWentWrong` like this:
 
 ```js
 var safe = Action.safe;
@@ -377,13 +373,16 @@ new Action(function(cb){
 
 ```
 
-That's all core functions of `Action` is going to give you, thank you for reading, how long does it take you? hope you enjoy my solution :)
+That's all core functions of `Action`, but it's more powerful than first look! make sure you read:
 
-+ Check [API doc](https://github.com/winterland1989/Action.js/wiki/API-document) for interesting things like `Action.parallel`, `Action.race`, `Action.sequence` and `Action.retry`.
 
-+ Read [Difference from Promise](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise) to get a deeper understanding.
++ [Difference from Promise](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise) to get a deeper understanding.
 
-+ Read [Return value of go](https://github.com/winterland1989/Action.js/wiki/Return-value-of-go) to learn how to cancel an `Action`.
++ [Return value of go](https://github.com/winterland1989/Action.js/wiki/Return-value-of-go) to learn how to cancel an `Action`.
+
++ [Action.signal](https://github.com/winterland1989/Action.js/wiki/Action.signal) to see how `Action` making async UI management easy.
+
++ [API doc](https://github.com/winterland1989/Action.js/wiki/API-document) for interesting things like `Action.parallel`, `Action.race`, `Action.sequence` and `Action.retry`.
 
 FAQ<a name="FAQ"></a>
 =====================
@@ -464,6 +463,9 @@ The choice of using `Error` to skip `next` and hit `guard` is not arbitrary, ins
 
 Changelog<a name="Changelog"></a>
 ================================
+
+v2.4.0
+Add `Action.signal` to ease UI callback management.
 
 v2.3.0
 Now when you construct an `Action`, the `this` variable inside the contination will be the `Action` instance.

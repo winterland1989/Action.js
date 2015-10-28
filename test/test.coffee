@@ -4,6 +4,7 @@ freeze = require './freeze.coffee'
 chain = require './chain.coffee'
 race = require './race.coffee'
 delay = require './delay.coffee'
+signal = require './signal.coffee'
 retry = require './retry.coffee'
 parallel = require './parallel.coffee'
 join = require './join.coffee'
@@ -48,4 +49,7 @@ core
 .next ->
     console.log 'Test Action.co ========================='
     co
+.next ->
+    console.log 'Test Action.signal ====================='
+    signal
 .go -> console.log 'Tests all passed'

@@ -46,6 +46,9 @@ class Action
 Action.wrap = (data) ->
     new Action (cb) -> cb data
 
+# signal Action, when fired, the callback chain are returned directly.
+Action.signal = new Action (cb) -> cb
+
 # fire current callback chain now, and save pending callbacks, when async action finish, feed the value to them
 Action.freeze = (action) ->
     pending = true
