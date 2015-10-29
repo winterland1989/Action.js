@@ -13,6 +13,9 @@ module.exports =
     actionBar: new Action (cb) ->
         setTimeout ( -> cb 'bar'), 200
 
+    actionFail: new Action (cb) ->
+            setTimeout ( -> cb new Error 'testError'), 150
+
     monadicActionFoo: (data) ->
         new Action (cb) ->
             setTimeout ( -> cb data + 'foo'), 100
@@ -36,3 +39,4 @@ module.exports =
             50
         )
 
+    signalAction: Action.signal.next (w) -> 'signal' + w

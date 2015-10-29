@@ -49,6 +49,28 @@ Action.wrap = (data) ->
 # signal Action, when fired, the callback chain are returned directly.
 Action.signal = new Action (cb) -> cb
 
+# fuse a signal array.
+Action.fuseSignal = (actions, fireAtError = false) ->
+    l = actions.length
+    if l > 0
+        new Action (cb) ->
+            results = new Array(l)
+            returns = new Array(l)
+            flags = new Array(l)
+            for i in [0..l-1] then flags[i] = false
+            fireByIndex = (index) -> (data) ->
+                if (data instanceof Error) and fireAtError
+                    flags[index] = false
+                    cb(data)
+                else
+                    results[index] = data
+                    flags[index] = true
+                    if false not in flags then cb results
+            for action, i in actions
+                returns[i] = action._go fireByIndex(i)
+            returns
+    else Action.wrap []
+
 # fire current callback chain now, and save pending callbacks, when async action finish, feed the value to them
 Action.freeze = (action) ->
     pending = true
@@ -106,8 +128,8 @@ Action.parallel = (actions, stopAtError = false) ->
     if l > 0
         new Action (cb) ->
             countDown = l
-            results = new Array(countDown)
-            returns = new Array(countDown)
+            results = new Array(l)
+            returns = new Array(l)
             fireByIndex = (index) -> (data) ->
                 if (data instanceof Error) and stopAtError
                     cb?(data)

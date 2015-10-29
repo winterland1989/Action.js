@@ -11,16 +11,17 @@ Action.js, a fast, small, full feature async library
     + Add a script tag and use `window.Action`.
 
 + Highlights:
-    + [Fast](https://github.com/winterland1989/Action.js/wiki/Benchmark) and small(5.3k/minified 1.9k/gzipped)
-    + Full feature APIs like `retry`, `parallel`, `race`, `sequence` and more, also have `co` to work with generator functions.
+    + [Blazing fast](https://github.com/winterland1989/Action.js/wiki/Benchmark) and extremly small(5.8k/minified 2.0k/gzipped)
+    + Full feature APIs like `retry`, `parallel`, `race`, `sequence` and more.
     + [Cancellable](https://github.com/winterland1989/Action.js/wiki/Return-value-of-go) and [retriable](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise) semantics.
+    + `Action.co` to work with generator functions.
+    + [Signal and pump](https://github.com/winterland1989/Action.js/wiki/Signal-And-Pump) provides easy and composable async UI management(form validation...).
     + Bundled with `ajax`, `jsonp` for front-end usage.
-    + [Action.signal](https://github.com/winterland1989/Action.js/wiki/Action.signal) provides easy and composable async UI management.
 
 What is `Action`
 ----------------
 
-Interested? `Action` is a fast and clean alternative to `Promise` or `Observable`，Its core is an extremly simple javascript class:
+Interested? `Action` is a fast and clean alternative to both `Promise` and `Observable`，Its core is an extremly simple javascript class:
 
 ```js
 var Action = function(go) {
@@ -124,7 +125,7 @@ Action.prototype._next = function(cb) {
 };
 ```
 
-We use `instanceof Action` to check if `cb` returns an `Action` or not, if an `Action` is returned, we fire it with `_cb`, the callback which our new `Action` will going to receive:
+This's the core of composable contination, We use `instanceof Action` to check if `cb` returns an `Action` or not, if an `Action` is returned, we fire it with `_cb`, the callback which our new `Action` will going to receive:
 
 ```js
 readFileAction
@@ -347,19 +348,12 @@ Use `safe` wrap your `someProcessMayWentWrong` like this:
 ```js
 var safe = Action.safe;
 new Action(function(cb){
-    readFile('fileA', function(err, data){
-        if (err){
-            cb(err);
-        }else{
-            cb(data);
-        }
-    });
+    ...
 })
 .next(
     safe(new Error("PROCESS_ERROR_XXX: process xxx failed when xxx")
         , someProcessMayWentWrong)
 )
-.next(...)
 .next(...)
 .guard(function(e){
     if (e.message.indexOf('ENOENT') === 0){
@@ -373,19 +367,41 @@ new Action(function(cb){
 
 ```
 
-That's all core functions of `Action`, but it's more powerful than first look! make sure you read:
-
+That's all core functions of `Action`, but it's much more powerful than first look! make sure you read:
 
 + [Difference from Promise](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise) to get a deeper understanding.
 
 + [Return value of go](https://github.com/winterland1989/Action.js/wiki/Return-value-of-go) to learn how to cancel an `Action`.
 
-+ [Action.signal](https://github.com/winterland1989/Action.js/wiki/Action.signal) to see how `Action` making async UI management easy.
++ [Signal and pump](https://github.com/winterland1989/Action.js/wiki/Signal-and-pump) to see how `Action` making async UI management easy.
 
 + [API doc](https://github.com/winterland1989/Action.js/wiki/API-document) for interesting things like `Action.parallel`, `Action.race`, `Action.sequence` and `Action.retry`.
 
 FAQ<a name="FAQ"></a>
 =====================
+
+When to use this library?
+-------------------------
+
+With `Promise` added to ES6 and ES7 `async/await` proposal, one must ask, why another library to do the same things again?
+
+Because `Action` is not `Promise`, It's a faster, simpler and full feature alternative comes with more flexible semantics. Actually `Action` have a [very elegant `Action.co` implementation](https://github.com/winterland1989/Action.js/blob/master/Action.coffee#L205) to work with generators, nevertheless, use this library if you:
+
++ Want something small, fast and memory effient in browser, Action.js even have `ajax/jsonp` bundled.
+
++ Want to manage complex async UI, read [Signal and pump](https://github.com/winterland1989/Action.js/wiki/Signal-and-pump) to get a modular solution to async UI management.
+
++ Want manage cancellable actions, read the [Return value of go](https://github.com/winterland1989/Action.js/wiki/Return-value-of-go) to get an elegant solution to cancellable actions.
+
++ Want a different sementics, with `Promise`, you just can't reuse your callback chain, you have to create a new `Promise`, with `Action`, just `go` again, never waste memory on GC. 
+
++ Want to control exactly when the action will run, with `Promise`, all action run in next tick, While with `Action`, action runs when you call `go`, `_go` or `Action.freeze`.
+
++ Want raw speed, this is somehow not really an issue, most of the time `Promise` or `Action` won't affect that much, nevertheless, `Action.js` can guarantee speed close to handroll callbacks in any runtime, just much cleaner.
+
+If you have a FP background, you must find all i have done is porting the `Cont` monad from Haskell, and i believe you have divided your program into many composable functions already, just connect them with `next`.
+
+The semantics of `Action` also fit varieties situations like animation and interactive UI, it's far more suitable than `Promise` in these situations.
 
 What makes `Action` fast?
 -------------------------
@@ -433,26 +449,6 @@ fileA
 
 If you want have a `Promise` behavior(fire and memorize), use `Action.freeze`, `go` won't return a new `Action`, instead `go` return a cancel handler if underline action can be cancelled.
 
-When to use this library?
--------------------------
-
-With `Promise` added to ES6 and ES7 `async/await` proposal, one must ask, why another library to do the same things again?
-
-Because `Action` is not `Promise`, It's a faster, simpler and full feature alternative comes with more flexible semantics. Actually `Action` have a [very elegant `Action.co` implementation](https://github.com/winterland1989/Action.js/blob/master/Action.coffee#L205) to work with generators, nevertheless, use this library if you:
-
-+ Want something small, fast and memory effient in browser, Action.js even have `ajax/jsonp` bundled.
-
-+ Want manage cancellable actions, read the [Return value of go](https://github.com/winterland1989/Action.js/wiki/Return-value-of-go) to get an elegant solution to cancellable actions.
-
-+ Want a different sementics, with `Promise`, you just can't reuse your callback chain, you have to create a new `Promise`, with `Action`, just `go` again, never waste memory on GC. 
-
-+ Want to control exactly when the action will run, with `Promise`, all action run in next tick, While with `Action`, action runs when you call `go`, `_go` or `Action.freeze`.
-
-+ Want raw speed, this is somehow not really an issue, most of the time `Promise` or `Action` won't affect that much, nevertheless, `Action.js` can guarantee speed close to handroll callbacks in any runtime, just much cleaner.
-
-If you have a FP background, you must find all i have done is porting the `Cont` monad from Haskell, and i believe you have divided your program into many composable functions already, just connect them with `next`.
-
-The semantics of `Action` also fit varieties situations like animation and interactive UI, it's far more suitable than `Promise` in these situations.
 
 How can i send an `Error` to downstream's `next`
 ------------------------------------------------
@@ -465,7 +461,7 @@ Changelog<a name="Changelog"></a>
 ================================
 
 v2.4.0
-Add `Action.signal` to ease UI callback management.
+Add `Action.signal` and `Action.fuseSignal` to ease async UI management.
 
 v2.3.0
 Now when you construct an `Action`, the `this` variable inside the contination will be the `Action` instance.

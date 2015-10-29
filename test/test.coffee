@@ -50,6 +50,6 @@ core
     console.log 'Test Action.co ========================='
     co
 .next ->
-    console.log 'Test Action.signal ====================='
+    console.log 'Test Action.signal and fuseSignal ======'
     signal
 .go -> console.log 'Tests all passed'
