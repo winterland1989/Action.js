@@ -449,7 +449,6 @@ fileA
 
 If you want have a `Promise` behavior(fire and memorize), use `Action.freeze`, `go` won't return a new `Action`, instead `go` return a cancel handler if underline action can be cancelled.
 
-
 How can i send an `Error` to downstream's `next`
 ------------------------------------------------
 
@@ -458,7 +457,10 @@ No, you can't, however, you can receive `Error` from upstream use `_next`, `_go`
 The choice of using `Error` to skip `next` and hit `guard` is not arbitrary, instead of creating an `ActionError` class, use `Error` unify type with system runtime, and providing callstack information. And you can now break your program by throwing an Error if you really want to.
 
 Changelog<a name="Changelog"></a>
-================================
+=================================
+
+v2.4.1
+Fix a `Action.fuseSignal` bug.
 
 v2.4.0
 Add `Action.signal` and `Action.fuseSignal` to ease async UI management.

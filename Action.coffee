@@ -59,13 +59,17 @@ Action.fuseSignal = (actions, fireAtError = false) ->
             flags = new Array(l)
             for i in [0..l-1] then flags[i] = false
             fireByIndex = (index) -> (data) ->
-                if (data instanceof Error) and fireAtError
-                    flags[index] = false
-                    cb(data)
-                else
-                    results[index] = data
-                    flags[index] = true
-                    if false not in flags then cb results
+                results[index] = data
+                flags[index] = true
+                noErrorAndFalse = true
+                for i in [0..l-1]
+                    if flags[i] == false
+                        noErrorAndFalse = false
+                    if results[i] instanceof Error and fireAtError
+                        noErrorAndFalse = false
+                        cb results[i]
+                        break
+                if noErrorAndFalse then cb results
             for action, i in actions
                 returns[i] = action._go fireByIndex(i)
             returns
