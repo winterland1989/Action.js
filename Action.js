@@ -58,7 +58,11 @@
         if (data instanceof Error) {
           throw data;
         } else {
-          return typeof cb === "function" ? cb(data) : void 0;
+          if (cb != null) {
+            return cb(data);
+          } else {
+            return data;
+          }
         }
       });
     };

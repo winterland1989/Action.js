@@ -40,11 +40,11 @@ class Action
         @_go (data) ->
             if data instanceof Error
                 throw data
-            else cb?(data)
+            else
+                if cb? then cb(data) else data
 
 # wrap a value in an Action
-Action.wrap = (data) ->
-    new Action (cb) -> cb data
+Action.wrap = (data) -> new Action (cb) -> cb data
 
 # signal Action, when fired, the callback chain are returned directly.
 Action.signal = new Action (cb) -> cb
