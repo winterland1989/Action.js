@@ -459,6 +459,9 @@ The choice of using `Error` to skip `next` and hit `guard` is not arbitrary, ins
 Changelog<a name="Changelog"></a>
 =================================
 
+v2.4.2
+Make `prototype.go` default to id function if no callback is provided.
+
 v2.4.1
 Fix a `Action.fuseSignal` bug.
 
