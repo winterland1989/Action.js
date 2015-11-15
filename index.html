@@ -42,7 +42,7 @@
 <ul>
 <li>
 <code>npm i action-js</code> and <code>var Action = require('action-js')</code>.</li>
-<li>Clone this repo and use Action.js with AMD or CMD loader, bundler.</li>
+<li>Clone this repo and use <code>Action.js</code> and <code>ajaxHelper.js</code> with AMD or CMD loader, bundler.</li>
 <li>Add a script tag and use <code>window.Action</code>.</li>
 </ul>
 </li>
@@ -51,7 +51,7 @@
 
 <ul>
 <li>
-<a href="https://github.com/winterland1989/Action.js/wiki/Benchmark">Blazing fast</a> and extremly small(5.8k/minified 2.0k/gzipped)</li>
+<a href="https://github.com/winterland1989/Action.js/wiki/Benchmark">Blazing fast</a> and extremly small(4.2k/minified 1.4k/gzipped)</li>
 <li>Full feature APIs like <code>retry</code>, <code>parallel</code>, <code>race</code>, <code>sequence</code> and more.</li>
 <li>
 <a href="https://github.com/winterland1989/Action.js/wiki/Return-value-of-go">Cancellable</a> and <a href="https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise">retriable</a> semantics.</li>
@@ -59,7 +59,7 @@
 <code>Action.co</code> to work with generator functions.</li>
 <li>
 <a href="https://github.com/winterland1989/Action.js/wiki/Signal-And-Pump">Signal and pump</a> provides easy and composable async UI management(form validation...).</li>
-<li>Bundled with <code>ajax</code>, <code>jsonp</code> for front-end usage.</li>
+<li>Provide <code>ajax</code>, <code>jsonp</code> for front-end usage, check <code>ajaxHelper.js</code> and <a href="https://github.com/winterland1989/Action.js/wiki/ajaxHelpers-API-document">ajaxHelpers API doc</a>.</li>
 </ul>
 </li>
 </ul>
@@ -386,6 +386,7 @@ readFileAction
 <li><p><a href="https://github.com/winterland1989/Action.js/wiki/Return-value-of-go">Return value of go</a> to learn how to cancel an <code>Action</code>.</p></li>
 <li><p><a href="https://github.com/winterland1989/Action.js/wiki/Signal-and-pump">Signal and pump</a> to see how <code>Action</code> making async UI management easy.</p></li>
 <li><p><a href="https://github.com/winterland1989/Action.js/wiki/API-document">API doc</a> for interesting things like <code>Action.parallel</code>, <code>Action.race</code>, <code>Action.sequence</code> and <code>Action.retry</code>.</p></li>
+<li><p><a href="https://github.com/winterland1989/Action.js/wiki/ajaxHelpers-API-document">ajaxHelpers API doc</a> for front-end needs like <code>ajax</code>, <code>jsonp</code> and <code>parseParam/buildParam</code>.</p></li>
 </ul>
 
 <h1>
@@ -400,7 +401,7 @@ readFileAction
 <p>Because <code>Action</code> is not <code>Promise</code>, It's a faster, simpler and full feature alternative comes with more flexible semantics. Actually <code>Action</code> have a <a href="https://github.com/winterland1989/Action.js/blob/master/Action.coffee#L205">very elegant <code>Action.co</code> implementation</a> to work with generators, nevertheless, use this library if you:</p>
 
 <ul>
-<li><p>Want something small, fast and memory effient in browser, Action.js even have <code>ajax/jsonp</code> bundled.</p></li>
+<li><p>Want something small, fast and memory effient in browser.</p></li>
 <li><p>Want to manage complex async UI, read <a href="https://github.com/winterland1989/Action.js/wiki/Signal-and-pump">Signal and pump</a> to get a modular solution to async UI management.</p></li>
 <li><p>Want manage cancellable actions, read the <a href="https://github.com/winterland1989/Action.js/wiki/Return-value-of-go">Return value of go</a> to get an elegant solution to cancellable actions.</p></li>
 <li><p>Want a different sementics, with <code>Promise</code>, you just can't reuse your callback chain, you have to create a new <code>Promise</code>, with <code>Action</code>, just <code>go</code> again, never waste memory on GC. </p></li>
@@ -465,6 +466,15 @@ fileA
 <h1>
 <a id="changelog" class="anchor" href="#changelog" aria-hidden="true"><span class="octicon octicon-link"></span></a>Changelog<a name="Changelog"></a>
 </h1>
+
+<p>v3.0.0
+Seperate ajax related stuff into <code>ajaxHelper.js</code>.</p>
+
+<p>v2.4.2
+Make <code>prototype.go</code> default to id function if no callback is provided.</p>
+
+<p>v2.4.1
+Fix a <code>Action.fuseSignal</code> bug.</p>
 
 <p>v2.4.0
 Add <code>Action.signal</code> and <code>Action.fuseSignal</code> to ease async UI management.</p>
