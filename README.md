@@ -7,16 +7,16 @@ Action.js, a fast, small, full feature async library
 + [API document](https://github.com/winterland1989/Action.js/wiki/API-document)
 + Usage: 
     + `npm i action-js` and `var Action = require('action-js')`.
-    + Clone this repo and use Action.js with AMD or CMD loader, bundler.
+    + Clone this repo and use `Action.js` and `ajaxHelper.js` with AMD or CMD loader, bundler.
     + Add a script tag and use `window.Action`.
 
 + Highlights:
-    + [Blazing fast](https://github.com/winterland1989/Action.js/wiki/Benchmark) and extremly small(5.8k/minified 2.0k/gzipped)
+    + [Blazing fast](https://github.com/winterland1989/Action.js/wiki/Benchmark) and extremly small(4.2k/minified 1.4k/gzipped)
     + Full feature APIs like `retry`, `parallel`, `race`, `sequence` and more.
     + [Cancellable](https://github.com/winterland1989/Action.js/wiki/Return-value-of-go) and [retriable](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise) semantics.
     + `Action.co` to work with generator functions.
     + [Signal and pump](https://github.com/winterland1989/Action.js/wiki/Signal-And-Pump) provides easy and composable async UI management(form validation...).
-    + Bundled with `ajax`, `jsonp` for front-end usage.
+    + Provide `ajax`, `jsonp` for front-end usage, check `ajaxHelper.js`.
 
 What is `Action`
 ----------------
@@ -377,6 +377,8 @@ That's all core functions of `Action`, but it's much more powerful than first lo
 
 + [API doc](https://github.com/winterland1989/Action.js/wiki/API-document) for interesting things like `Action.parallel`, `Action.race`, `Action.sequence` and `Action.retry`.
 
++ [ajaxHelper API doc](https://github.com/winterland1989/Action.js/wiki/ajaxHelper-API-document) for front-end needs like `ajax`, `jsonp` and `parseParam/buildParam`.
+
 FAQ<a name="FAQ"></a>
 =====================
 
@@ -387,7 +389,7 @@ With `Promise` added to ES6 and ES7 `async/await` proposal, one must ask, why an
 
 Because `Action` is not `Promise`, It's a faster, simpler and full feature alternative comes with more flexible semantics. Actually `Action` have a [very elegant `Action.co` implementation](https://github.com/winterland1989/Action.js/blob/master/Action.coffee#L205) to work with generators, nevertheless, use this library if you:
 
-+ Want something small, fast and memory effient in browser, Action.js even have `ajax/jsonp` bundled.
++ Want something small, fast and memory effient in browser.
 
 + Want to manage complex async UI, read [Signal and pump](https://github.com/winterland1989/Action.js/wiki/Signal-and-pump) to get a modular solution to async UI management.
 
@@ -458,6 +460,9 @@ The choice of using `Error` to skip `next` and hit `guard` is not arbitrary, ins
 
 Changelog<a name="Changelog"></a>
 =================================
+
+v3.0.0
+Seperate ajax related stuff into `ajaxHelper.js`.
 
 v2.4.2
 Make `prototype.go` default to id function if no callback is provided.

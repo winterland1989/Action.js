@@ -1,7 +1,7 @@
 {
   "name": "action-js",
-  "version": "2.4.2",
-  "description": "a sane way to write async code",
+  "version": "3.0.0",
+  "description": "fast, small, full feature async library",
   "main": "Action.js",
   "directories": {
     "test": "test"
