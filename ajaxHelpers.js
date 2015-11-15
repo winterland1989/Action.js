@@ -2,7 +2,7 @@
 (function() {
   var Action, ajax, buildParam, buildParamR, jsonp, parseCurrentParam, parseParam;
 
-  Action = require('./Action3');
+  Action = require('./Action');
 
   parseParam = function(str) {
     var i, j, key, len, pair, pairs, params, value;
@@ -17,11 +17,10 @@
         key = decodeURIComponent(pair[0]);
         value = pair.length === 2 ? decodeURIComponent(pair[1]) : void 0;
         if (params[key] != null) {
-          if (params[key] instanceof Array) {
+          if (!(params[key] instanceof Array)) {
             params[key] = [params[key]];
-          } else {
-            params[key].push(value);
           }
+          params[key].push(value);
         } else {
           params[key] = value;
         }

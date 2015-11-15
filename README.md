@@ -16,7 +16,7 @@ Action.js, a fast, small, full feature async library
     + [Cancellable](https://github.com/winterland1989/Action.js/wiki/Return-value-of-go) and [retriable](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise) semantics.
     + `Action.co` to work with generator functions.
     + [Signal and pump](https://github.com/winterland1989/Action.js/wiki/Signal-And-Pump) provides easy and composable async UI management(form validation...).
-    + Provide `ajax`, `jsonp` for front-end usage, check `ajaxHelper.js`.
+    + Provide `ajax`, `jsonp` for front-end usage, check `ajaxHelper.js` and [ajaxHelpers API doc](https://github.com/winterland1989/Action.js/wiki/ajaxHelpers-API-document).
 
 What is `Action`
 ----------------
@@ -377,7 +377,7 @@ That's all core functions of `Action`, but it's much more powerful than first lo
 
 + [API doc](https://github.com/winterland1989/Action.js/wiki/API-document) for interesting things like `Action.parallel`, `Action.race`, `Action.sequence` and `Action.retry`.
 
-+ [ajaxHelper API doc](https://github.com/winterland1989/Action.js/wiki/ajaxHelper-API-document) for front-end needs like `ajax`, `jsonp` and `parseParam/buildParam`.
++ [ajaxHelpers API doc](https://github.com/winterland1989/Action.js/wiki/ajaxHelpers-API-document) for front-end needs like `ajax`, `jsonp` and `parseParam/buildParam`.
 
 FAQ<a name="FAQ"></a>
 =====================

@@ -1,4 +1,4 @@
-Action = require './Action3'
+Action = require './Action'
 
 parseParam = (str) ->
     if str?
@@ -12,9 +12,9 @@ parseParam = (str) ->
             key = decodeURIComponent(pair[0])
             value = if pair.length == 2 then decodeURIComponent pair[1]
             if params[key]?
-                if params[key] instanceof Array
+                unless params[key] instanceof Array
                     params[key] = [params[key]]
-                else params[key].push(value)
+                params[key].push(value)
             else
                 params[key] = value
         params
