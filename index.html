@@ -71,7 +71,7 @@
 <p>Interested? <code>Action</code> is a fast and clean alternative to both <code>Promise</code> and <code>Observable</code>，Its core is an extremly simple javascript class:</p>
 
 <div class="highlight highlight-source-js"><pre><span class="pl-k">var</span> <span class="pl-en">Action</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">go</span>) {
-    <span class="pl-v">this</span>._go <span class="pl-k">=</span> go;
+    <span class="pl-smi">this</span>.<span class="pl-smi">_go</span> <span class="pl-k">=</span> go;
 }</pre></div>
 
 <p>We construct an <code>Action</code> by passing a function which consume a callback(aka. contination), take <code>fs.readFile</code> as an example:</p>
@@ -79,20 +79,20 @@
 <div class="highlight highlight-source-js"><pre><span class="pl-c">// suppose this readFile never fail</span>
 <span class="pl-c">// we will talk error handleing later</span>
 <span class="pl-k">var</span> readFileAction <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-en">Action</span>(<span class="pl-k">function</span>(<span class="pl-smi">cb</span>){
-    fs.readFile(<span class="pl-s"><span class="pl-pds">'</span>data.txt<span class="pl-pds">'</span></span>, <span class="pl-k">function</span>(<span class="pl-smi">err</span>, <span class="pl-smi">data</span>){
-        cb(data);
+    <span class="pl-smi">fs</span>.<span class="pl-en">readFile</span>(<span class="pl-s"><span class="pl-pds">'</span>data.txt<span class="pl-pds">'</span></span>, <span class="pl-k">function</span>(<span class="pl-smi">err</span>, <span class="pl-smi">data</span>){
+        <span class="pl-en">cb</span>(data);
     })
 });</pre></div>
 
 <p>Now if we provide a callback to <code>readFileAction._go</code>:</p>
 
-<div class="highlight highlight-source-js"><pre>readFileAction._go(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
+<div class="highlight highlight-source-js"><pre><span class="pl-smi">readFileAction</span>.<span class="pl-en">_go</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
     <span class="pl-en">console</span>.<span class="pl-c1">log</span>(data);
 })</pre></div>
 
 <p>The callback chain will be fired, it's equivalent to following code:</p>
 
-<div class="highlight highlight-source-js"><pre>readFile(<span class="pl-s"><span class="pl-pds">"</span>data.txt<span class="pl-pds">"</span></span>, <span class="pl-k">function</span>(<span class="pl-smi">data</span>){
+<div class="highlight highlight-source-js"><pre><span class="pl-en">readFile</span>(<span class="pl-s"><span class="pl-pds">"</span>data.txt<span class="pl-pds">"</span></span>, <span class="pl-k">function</span>(<span class="pl-smi">data</span>){
     <span class="pl-en">console</span>.<span class="pl-c1">log</span>(data);
 });</pre></div>
 
@@ -101,11 +101,11 @@
 <p>Now we can add a method to compose another callback with this contination:</p>
 
 <div class="highlight highlight-source-js"><pre><span class="pl-c1">Action</span>.<span class="pl-c1">prototype</span>.<span class="pl-en">_next</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">cb</span>) {
-    <span class="pl-k">var</span> _go <span class="pl-k">=</span> <span class="pl-v">this</span>._go;
+    <span class="pl-k">var</span> _go <span class="pl-k">=</span> <span class="pl-smi">this</span>.<span class="pl-smi">_go</span>;
     <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-en">Action</span>(<span class="pl-k">function</span>(<span class="pl-smi">_cb</span>) {
-        <span class="pl-k">return</span> _go(<span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
-            <span class="pl-k">var</span> _data <span class="pl-k">=</span> cb(data);
-            <span class="pl-k">return</span> _cb(_data);
+        <span class="pl-k">return</span> <span class="pl-en">_go</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
+            <span class="pl-k">var</span> _data <span class="pl-k">=</span> <span class="pl-en">cb</span>(data);
+            <span class="pl-k">return</span> <span class="pl-en">_cb</span>(_data);
         });
     });
 };</pre></div>
@@ -123,15 +123,15 @@
 <p>With our <code>_next</code>, we can chain multiply callbacks and pass data between them:</p>
 
 <div class="highlight highlight-source-js"><pre>readFileAction
-._next(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
-    <span class="pl-k">return</span> data.<span class="pl-c1">length</span>;
+.<span class="pl-en">_next</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
+    <span class="pl-k">return</span> <span class="pl-smi">data</span>.<span class="pl-c1">length</span>;
 })
-._next(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
+.<span class="pl-en">_next</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
     <span class="pl-c">// data here is the length we obtain last step</span>
     <span class="pl-en">console</span>.<span class="pl-c1">log</span>(data);
     <span class="pl-k">return</span> length <span class="pl-k">&gt;</span> <span class="pl-c1">0</span>
 })
-._go(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
+.<span class="pl-en">_go</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
     <span class="pl-c">// data here is a Boolean</span>
     <span class="pl-k">if</span>(data){
         ...
@@ -143,14 +143,14 @@
 <p>Nice, we just use a very simple class, one very simple functions, the callbacks are written in a much more readable way now, but we have a key problem to be solved yet: what if we want to nest async <code>Action</code> inside an <code>Action</code>? Turn out with a little modification to our <code>_next</code> function, we can handle that:</p>
 
 <div class="highlight highlight-source-js"><pre><span class="pl-c1">Action</span>.<span class="pl-c1">prototype</span>.<span class="pl-en">_next</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">cb</span>) {
-    <span class="pl-k">var</span> _go <span class="pl-k">=</span> <span class="pl-v">this</span>._go;
+    <span class="pl-k">var</span> _go <span class="pl-k">=</span> <span class="pl-smi">this</span>.<span class="pl-smi">_go</span>;
     <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-en">Action</span>(<span class="pl-k">function</span>(<span class="pl-smi">_cb</span>) {
-        <span class="pl-k">return</span> _go(<span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
-            <span class="pl-k">var</span> _data <span class="pl-k">=</span> cb(data);
+        <span class="pl-k">return</span> <span class="pl-en">_go</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
+            <span class="pl-k">var</span> _data <span class="pl-k">=</span> <span class="pl-en">cb</span>(data);
             <span class="pl-k">if</span> (_data <span class="pl-k">instanceof</span> Action) {
-                <span class="pl-k">return</span> _data._go(_cb);
+                <span class="pl-k">return</span> <span class="pl-smi">_data</span>.<span class="pl-en">_go</span>(_cb);
             } <span class="pl-k">else</span> {
-                <span class="pl-k">return</span> _cb(_data);
+                <span class="pl-k">return</span> <span class="pl-en">_cb</span>(_data);
             }
         });
     });
@@ -159,13 +159,13 @@
 <p>This's the core of composable contination, We use <code>instanceof Action</code> to check if <code>cb</code> returns an <code>Action</code> or not, if an <code>Action</code> is returned, we fire it with <code>_cb</code>, the callback which our new <code>Action</code> will going to receive:</p>
 
 <div class="highlight highlight-source-js"><pre>readFileAction
-._next(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
+.<span class="pl-en">_next</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
     <span class="pl-k">var</span> newFile <span class="pl-k">=</span> <span class="pl-c1">parse</span>(data);
     <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-en">Action</span>(<span class="pl-k">function</span>(<span class="pl-smi">cb</span>){
-        readFile(newFile, cb);
+        <span class="pl-en">readFile</span>(newFile, cb);
     });
 })
-._go(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
+.<span class="pl-en">_go</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
     <span class="pl-c">// data here is the newFile's content</span>
     <span class="pl-en">console</span>.<span class="pl-c1">log</span>(data)
 })</pre></div>
@@ -174,16 +174,16 @@
 Before we proceed another 50%, one important thing to keep in mind: <strong>an <code>Action</code> is not a <code>Promise</code>, it will not happen if you don't pass a callback to <code>_go</code>, and it can be fired multiple times, it's just a reference to a wrapped contination</strong>:</p>
 
 <div class="highlight highlight-source-js"><pre>readFileAction
-._next(processOne)
-._go(<span class="pl-en">console</span>.log)
+.<span class="pl-en">_next</span>(processOne)
+.<span class="pl-en">_go</span>(<span class="pl-en">console</span>.<span class="pl-smi">log</span>)
 
 <span class="pl-c">// after we do other things, or inside another request handler</span>
 ...
 
 <span class="pl-c">// processTwo may receive different data since the file may change!</span>
 readFileAction
-._next(processTwo)
-._go(<span class="pl-en">console</span>.log)</pre></div>
+.<span class="pl-en">_next</span>(processTwo)
+.<span class="pl-en">_go</span>(<span class="pl-en">console</span>.<span class="pl-smi">log</span>)</pre></div>
 
 <p>I'll present <code>Action.freeze</code> in <a href="https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise">Difference from Promise</a> to give you <code>Promise</code> behavior when you need it, now let's attack another 50% of the callback hell issue.</p>
 
@@ -201,17 +201,17 @@ readFileAction
 <p>What we can do to make it simpler? It's a complex problem, we start solving it by simplify it: <strong>Action.js use <code>Error</code> type as a special type to pass error information to the downstream</strong>, what does this mean?</p>
 
 <div class="highlight highlight-source-js"><pre><span class="pl-c1">Action</span>.<span class="pl-c1">prototype</span>.<span class="pl-en">next</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">cb</span>) {
-    <span class="pl-k">var</span> _go <span class="pl-k">=</span> <span class="pl-v">this</span>._go;
+    <span class="pl-k">var</span> _go <span class="pl-k">=</span> <span class="pl-smi">this</span>.<span class="pl-smi">_go</span>;
     <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-en">Action</span>(<span class="pl-k">function</span>(<span class="pl-smi">_cb</span>) {
-        <span class="pl-k">return</span> _go(<span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
+        <span class="pl-k">return</span> <span class="pl-en">_go</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
             <span class="pl-k">if</span> (data <span class="pl-k">instanceof</span> Error) {
-                <span class="pl-k">return</span> _cb(data);
+                <span class="pl-k">return</span> <span class="pl-en">_cb</span>(data);
             } <span class="pl-k">else</span> {
-                <span class="pl-k">var</span> _data <span class="pl-k">=</span> cb(data);
+                <span class="pl-k">var</span> _data <span class="pl-k">=</span> <span class="pl-en">cb</span>(data);
                 <span class="pl-k">if</span> (_data <span class="pl-k">instanceof</span> Action) {
-                    <span class="pl-k">return</span> _data._go(_cb);
+                    <span class="pl-k">return</span> <span class="pl-smi">_data</span>.<span class="pl-en">_go</span>(_cb);
                 } <span class="pl-k">else</span> {
-                    <span class="pl-k">return</span> _cb(_data);
+                    <span class="pl-k">return</span> <span class="pl-en">_cb</span>(_data);
                 }
             }
         });
@@ -229,18 +229,18 @@ readFileAction
 <p><code>next</code> ensure the <code>cb</code> it received, <strong>will never receive an <code>Error</code></strong>, we just skip <code>cb</code> and pass <code>Error</code> downstream, symmetrically, we define a function which only deal with <code>Error</code>, and let normal values pass:</p>
 
 <div class="highlight highlight-source-js"><pre><span class="pl-c1">Action</span>.<span class="pl-c1">prototype</span>.<span class="pl-en">guard</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">cb</span>) {
-    <span class="pl-k">var</span> _go <span class="pl-k">=</span> <span class="pl-v">this</span>._go;
+    <span class="pl-k">var</span> _go <span class="pl-k">=</span> <span class="pl-smi">this</span>.<span class="pl-smi">_go</span>;
     <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-en">Action</span>(<span class="pl-k">function</span>(<span class="pl-smi">_cb</span>) {
-        <span class="pl-k">return</span> _go(<span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
+        <span class="pl-k">return</span> <span class="pl-en">_go</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
            <span class="pl-k">if</span> (data <span class="pl-k">instanceof</span> Error) {
-            <span class="pl-k">var</span> _data <span class="pl-k">=</span> cb(data);
+            <span class="pl-k">var</span> _data <span class="pl-k">=</span> <span class="pl-en">cb</span>(data);
                 <span class="pl-k">if</span> (_data <span class="pl-k">instanceof</span> Action) {
-                    <span class="pl-k">return</span> _data._go(_cb);
+                    <span class="pl-k">return</span> <span class="pl-smi">_data</span>.<span class="pl-en">_go</span>(_cb);
                 } <span class="pl-k">else</span> {
-                    <span class="pl-k">return</span> _cb(_data);
+                    <span class="pl-k">return</span> <span class="pl-en">_cb</span>(_data);
                 }
             } <span class="pl-k">else</span> {
-                <span class="pl-k">return</span> _cb(data);
+                <span class="pl-k">return</span> <span class="pl-en">_cb</span>(data);
             }
         });
     });
@@ -251,29 +251,29 @@ readFileAction
 <p>Following code demonstrate how to use our <code>next</code> and <code>guard</code>:</p>
 
 <div class="highlight highlight-source-js"><pre><span class="pl-k">new</span> <span class="pl-en">Action</span>(<span class="pl-k">function</span>(<span class="pl-smi">cb</span>){
-    readFile(<span class="pl-s"><span class="pl-pds">'</span>fileA<span class="pl-pds">'</span></span>, <span class="pl-k">function</span>(<span class="pl-smi">err</span>, <span class="pl-smi">data</span>){
+    <span class="pl-en">readFile</span>(<span class="pl-s"><span class="pl-pds">'</span>fileA<span class="pl-pds">'</span></span>, <span class="pl-k">function</span>(<span class="pl-smi">err</span>, <span class="pl-smi">data</span>){
         <span class="pl-k">if</span> (err){
             <span class="pl-c">// see how to pass an Error to downstream</span>
             <span class="pl-c">// not reject, not throw, just pass it on, let it go</span>
-            cb(err);
+            <span class="pl-en">cb</span>(err);
         }<span class="pl-k">else</span>{
-            cb(data);
+            <span class="pl-en">cb</span>(data);
         }
     });
 })
 .<span class="pl-c1">next</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
     <span class="pl-c">// sync process</span>
-    <span class="pl-k">return</span> processData(data);
+    <span class="pl-k">return</span> <span class="pl-en">processData</span>(data);
 })
 .<span class="pl-c1">next</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
     <span class="pl-c">// async process</span>
     <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-en">Action</span>(<span class="pl-k">function</span>(<span class="pl-smi">cb</span>){
-        processDataAsync(data, cb);
+        <span class="pl-en">processDataAsync</span>(data, cb);
     })
 })
 .<span class="pl-c1">next</span>(
     <span class="pl-k">try</span>{
-        <span class="pl-k">return</span> someProcessMayWentWrong(data);
+        <span class="pl-k">return</span> <span class="pl-en">someProcessMayWentWrong</span>(data);
     }<span class="pl-k">catch</span>(e){
         <span class="pl-c">// same as above, we return the error to pass it on</span>
         <span class="pl-k">return</span> e;
@@ -281,13 +281,13 @@ readFileAction
 }))
 .<span class="pl-c1">next</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
     <span class="pl-c">// This process will be skip if previous steps pass an Error</span>
-    <span class="pl-k">return</span> anotherProcess(data);
+    <span class="pl-k">return</span> <span class="pl-en">anotherProcess</span>(data);
 })
-.guard(<span class="pl-k">function</span>(<span class="pl-smi">e</span>){
+.<span class="pl-en">guard</span>(<span class="pl-k">function</span>(<span class="pl-smi">e</span>){
     <span class="pl-c">// This process will be skip if there's no Errors</span>
-    <span class="pl-k">return</span> processError(e);
+    <span class="pl-k">return</span> <span class="pl-en">processError</span>(e);
 });
-._go(<span class="pl-en">console</span>.log);
+.<span class="pl-en">_go</span>(<span class="pl-en">console</span>.<span class="pl-smi">log</span>);
 </pre></div>
 
 <p>The final result will be produced by <code>anotherProcess</code> if <code>someProcessMayWentWrong</code> didn't go wrong and <code>readFile</code> didn't fail, otherwise it will be produced by <code>processError</code>.</p>
@@ -296,7 +296,7 @@ readFileAction
 
 <p>What if we don't supply a <code>guard</code>? Since we have to supply a callback to <code>_go</code>, we can check if the final result is an <code>Error</code> or not like this:</p>
 
-<div class="highlight highlight-source-js"><pre>apiReturnAction(<span class="pl-s"><span class="pl-pds">'</span>...<span class="pl-pds">'</span></span>)._go(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
+<div class="highlight highlight-source-js"><pre><span class="pl-en">apiReturnAction</span>(<span class="pl-s"><span class="pl-pds">'</span>...<span class="pl-pds">'</span></span>).<span class="pl-en">_go</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>){
     <span class="pl-k">if</span> (data <span class="pl-k">instanceof</span> Error){
         <span class="pl-c">//handle error here</span>
         ...
@@ -317,11 +317,11 @@ readFileAction
 <p>So here let me present the final version of <code>go</code>:</p>
 
 <div class="highlight highlight-source-js"><pre><span class="pl-c1">Action</span>.<span class="pl-c1">prototype</span>.<span class="pl-en">go</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">cb</span>) {
-    <span class="pl-k">return</span> <span class="pl-v">this</span>._go(<span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
+    <span class="pl-k">return</span> <span class="pl-smi">this</span>.<span class="pl-en">_go</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
         <span class="pl-k">if</span> (data <span class="pl-k">instanceof</span> Error) {
             <span class="pl-k">throw</span> data;
         } <span class="pl-k">else</span> <span class="pl-k">if</span> (cb <span class="pl-k">!=</span> <span class="pl-c1">null</span>) {
-            <span class="pl-k">return</span> cb(data);
+            <span class="pl-k">return</span> <span class="pl-en">cb</span>(data);
         }
     });
 };
@@ -330,13 +330,13 @@ readFileAction
 <p>Now user can omit the callback, and if user don't guard <code>Error</code>s, we will yell at them when <code>Error</code> occurs!</p>
 
 <div class="highlight highlight-source-js"><pre><span class="pl-k">new</span> <span class="pl-en">Action</span>(<span class="pl-k">function</span>(<span class="pl-smi">cb</span>){
-    readFile(<span class="pl-s"><span class="pl-pds">'</span>fileA<span class="pl-pds">'</span></span>, <span class="pl-k">function</span>(<span class="pl-smi">err</span>, <span class="pl-smi">data</span>){
+    <span class="pl-en">readFile</span>(<span class="pl-s"><span class="pl-pds">'</span>fileA<span class="pl-pds">'</span></span>, <span class="pl-k">function</span>(<span class="pl-smi">err</span>, <span class="pl-smi">data</span>){
         <span class="pl-k">if</span> (err){
             <span class="pl-c">// suppose we got an Error here</span>
-            cb(err);
+            <span class="pl-en">cb</span>(err);
         }<span class="pl-k">else</span>{
 
-            cb(data);
+            <span class="pl-en">cb</span>(data);
         }
     });
 })
@@ -350,7 +350,7 @@ readFileAction
 <span class="pl-c1">Action</span>.<span class="pl-en">safe</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">err</span>, <span class="pl-smi">fn</span>) {
     <span class="pl-k">return</span> <span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
         <span class="pl-k">try</span> {
-            <span class="pl-k">return</span> fn(data);
+            <span class="pl-k">return</span> <span class="pl-en">fn</span>(data);
         } <span class="pl-k">catch</span> (_error) {
             <span class="pl-k">return</span> err;
         }
@@ -359,20 +359,20 @@ readFileAction
 
 <p>Use <code>safe</code> wrap your <code>someProcessMayWentWrong</code> like this:</p>
 
-<div class="highlight highlight-source-js"><pre><span class="pl-k">var</span> safe <span class="pl-k">=</span> Action.safe;
+<div class="highlight highlight-source-js"><pre><span class="pl-k">var</span> safe <span class="pl-k">=</span> <span class="pl-smi">Action</span>.<span class="pl-smi">safe</span>;
 <span class="pl-k">new</span> <span class="pl-en">Action</span>(<span class="pl-k">function</span>(<span class="pl-smi">cb</span>){
     ...
 })
 .<span class="pl-c1">next</span>(
-    safe(<span class="pl-k">new</span> <span class="pl-en">Error</span>(<span class="pl-s"><span class="pl-pds">"</span>PROCESS_ERROR_XXX: process xxx failed when xxx<span class="pl-pds">"</span></span>)
+    <span class="pl-en">safe</span>(<span class="pl-k">new</span> <span class="pl-en">Error</span>(<span class="pl-s"><span class="pl-pds">"</span>PROCESS_ERROR_XXX: process xxx failed when xxx<span class="pl-pds">"</span></span>)
         , someProcessMayWentWrong)
 )
 .<span class="pl-c1">next</span>(...)
-.guard(<span class="pl-k">function</span>(<span class="pl-smi">e</span>){
-    <span class="pl-k">if</span> (e.message.<span class="pl-c1">indexOf</span>(<span class="pl-s"><span class="pl-pds">'</span>ENOENT<span class="pl-pds">'</span></span>) <span class="pl-k">===</span> <span class="pl-c1">0</span>){
+.<span class="pl-en">guard</span>(<span class="pl-k">function</span>(<span class="pl-smi">e</span>){
+    <span class="pl-k">if</span> (<span class="pl-smi">e</span>.<span class="pl-smi">message</span>.<span class="pl-c1">indexOf</span>(<span class="pl-s"><span class="pl-pds">'</span>ENOENT<span class="pl-pds">'</span></span>) <span class="pl-k">===</span> <span class="pl-c1">0</span>){
         ...
     }
-    <span class="pl-k">if</span> (e.message.<span class="pl-c1">indexOf</span>(<span class="pl-s"><span class="pl-pds">'</span>PROCESS_ERROR_XXX<span class="pl-pds">'</span></span>) <span class="pl-k">===</span> <span class="pl-c1">0</span> ){
+    <span class="pl-k">if</span> (<span class="pl-smi">e</span>.<span class="pl-smi">message</span>.<span class="pl-c1">indexOf</span>(<span class="pl-s"><span class="pl-pds">'</span>PROCESS_ERROR_XXX<span class="pl-pds">'</span></span>) <span class="pl-k">===</span> <span class="pl-c1">0</span> ){
         ...
     }
 })
@@ -440,7 +440,7 @@ fileA
 <p>Well, read <a href="https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise">Difference from Promise</a> and <a href="https://github.com/winterland1989/Action.js/wiki/Return-value-of-go">Return value of go</a> to get a detailed answer, tl,dr... here is the short answer:</p>
 
 <div class="highlight highlight-source-js"><pre><span class="pl-c">// readFile now and return a Action, this function won't block</span>
-<span class="pl-k">var</span> fileA <span class="pl-k">=</span> Action.freeze(readFileAction.<span class="pl-c1">next</span>(processOne))
+<span class="pl-k">var</span> fileA <span class="pl-k">=</span> <span class="pl-smi">Action</span>.<span class="pl-en">freeze</span>(<span class="pl-smi">readFileAction</span>.<span class="pl-c1">next</span>(processOne))
 
 <span class="pl-c">// now fileA will always have the same content</span>
 <span class="pl-c">// and file will never be read again.</span>
@@ -466,6 +466,13 @@ fileA
 <h1>
 <a id="changelog" class="anchor" href="#changelog" aria-hidden="true"><span class="octicon octicon-link"></span></a>Changelog<a name="Changelog"></a>
 </h1>
+
+<p>v3.1.0</p>
+
+<ol>
+<li><p>add <code>stopAtError</code> flag to <code>Action.join</code>.</p></li>
+<li><p>change <code>ajaxHelpers.buildParam</code> behavior when input contain arrays, now <code>foo: [1,2,3]</code> will output <code>foo=1&amp;foo=2&amp;foo=3</code>.</p></li>
+</ol>
 
 <p>v3.0.0
 Seperate ajax related stuff into <code>ajaxHelper.js</code>.</p>
