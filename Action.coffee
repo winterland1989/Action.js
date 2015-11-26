@@ -148,21 +148,28 @@ Action.parallel = (actions, stopAtError = false) ->
     else Action.wrap []
 
 # join two Actions together
-Action.join = (action1, action2, cb2) ->
+Action.join = (action1, action2, cb2, stopAtError = false) ->
     returns = new Array(2)
     new Action (cb) ->
         result1 = result2 = undefined
         countDown = 2
         returns[0] = action1._go (data) ->
             result1 = data
-            countDown--
-            if countDown == 0
-                fireByResult(cb, (cb2 result1, result2))
+            if (result1 instanceof Error) and stopAtError
+                countDown = -1
+                cb result1
+            else
+                countDown--
+                if countDown == 0 then fireByResult(cb, (cb2 result1, result2))
+
         returns[1] = action2._go (data) ->
             result2 = data
-            countDown--
-            if countDown == 0
-                fireByResult(cb, (cb2 result1, result2))
+            if (result2 instanceof Error) and stopAtError
+                countDown = -1
+                cb result2
+            else
+                countDown--
+                if countDown == 0 then fireByResult(cb, (cb2 result1, result2))
         returns
 
 # run an Array of Actions in parallel, return an Action wraps first result

@@ -26,12 +26,19 @@ parseCurrentParam = -> parseParam window.location.search
 # recursively build param string
 buildParamR = (prefix , data) ->
     result = []
-    for k, v of data
-        key = if prefix then prefix + '[' + k + ']' else k
-        if (typeof v) == 'object'
-            result.push buildParamR(key, v)
-        else if v?
-            result.push encodeURIComponent(key) + "=" + encodeURIComponent(v)
+    if data instanceof Array
+        for v in data
+            if (typeof v) == 'object'
+                result.push buildParamR(prefix, v)
+            else if v?
+                result.push encodeURIComponent(prefix) + "=" + encodeURIComponent(v)
+    else
+        for k, v of data
+            key = if prefix then prefix + '[' + k + ']' else k
+            if (typeof v) == 'object'
+                result.push buildParamR(key, v)
+            else if v?
+                result.push encodeURIComponent(key) + "=" + encodeURIComponent(v)
     result.join '&'
 
 # build query string
