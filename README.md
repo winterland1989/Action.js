@@ -462,6 +462,7 @@ Changelog<a name="Changelog"></a>
 =================================
 
 v3.1.0
+
 1. add `stopAtError` flag to `Action.join`.
 
 2. change `ajaxHelpers.buildParam` behavior when input contain arrays, now `foo: [1,2,3]` will output `foo=1&foo=2&foo=3`.
