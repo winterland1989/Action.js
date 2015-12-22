@@ -36,6 +36,7 @@
 <li><a href="#Changelog">Changelog</a></li>
 <li><a href="https://github.com/winterland1989/Action.js/wiki/Benchmark">Benchmark</a></li>
 <li><a href="https://github.com/winterland1989/Action.js/wiki/API-document">API document</a></li>
+<li><a href="https://github.com/winterland1989/Action.js/wiki/ajaxHelpers-API-document">ajaxHelpers API doc</a></li>
 <li>
 <p>Usage: </p>
 
@@ -52,7 +53,7 @@
 <ul>
 <li>
 <a href="https://github.com/winterland1989/Action.js/wiki/Benchmark">Blazing fast</a> and extremly small(4.2k/minified 1.4k/gzipped)</li>
-<li>Full feature APIs like <code>retry</code>, <code>parallel</code>, <code>race</code>, <code>sequence</code> and more.</li>
+<li>Full feature APIs like <code>retry</code>, <code>parallel</code>, <code>race</code>, <code>throttle</code> and more.</li>
 <li>
 <a href="https://github.com/winterland1989/Action.js/wiki/Return-value-of-go">Cancellable</a> and <a href="https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise">retriable</a> semantics.</li>
 <li>
@@ -71,7 +72,7 @@
 <p>Interested? <code>Action</code> is a fast and clean alternative to both <code>Promise</code> and <code>Observable</code>，Its core is an extremly simple javascript class:</p>
 
 <div class="highlight highlight-source-js"><pre><span class="pl-k">var</span> <span class="pl-en">Action</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">go</span>) {
-    <span class="pl-smi">this</span>.<span class="pl-smi">_go</span> <span class="pl-k">=</span> go;
+    <span class="pl-v">this</span>.<span class="pl-smi">_go</span> <span class="pl-k">=</span> go;
 }</pre></div>
 
 <p>We construct an <code>Action</code> by passing a function which consume a callback(aka. contination), take <code>fs.readFile</code> as an example:</p>
@@ -101,7 +102,7 @@
 <p>Now we can add a method to compose another callback with this contination:</p>
 
 <div class="highlight highlight-source-js"><pre><span class="pl-c1">Action</span>.<span class="pl-c1">prototype</span>.<span class="pl-en">_next</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">cb</span>) {
-    <span class="pl-k">var</span> _go <span class="pl-k">=</span> <span class="pl-smi">this</span>.<span class="pl-smi">_go</span>;
+    <span class="pl-k">var</span> _go <span class="pl-k">=</span> <span class="pl-v">this</span>.<span class="pl-smi">_go</span>;
     <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-en">Action</span>(<span class="pl-k">function</span>(<span class="pl-smi">_cb</span>) {
         <span class="pl-k">return</span> <span class="pl-en">_go</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
             <span class="pl-k">var</span> _data <span class="pl-k">=</span> <span class="pl-en">cb</span>(data);
@@ -143,7 +144,7 @@
 <p>Nice, we just use a very simple class, one very simple functions, the callbacks are written in a much more readable way now, but we have a key problem to be solved yet: what if we want to nest async <code>Action</code> inside an <code>Action</code>? Turn out with a little modification to our <code>_next</code> function, we can handle that:</p>
 
 <div class="highlight highlight-source-js"><pre><span class="pl-c1">Action</span>.<span class="pl-c1">prototype</span>.<span class="pl-en">_next</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">cb</span>) {
-    <span class="pl-k">var</span> _go <span class="pl-k">=</span> <span class="pl-smi">this</span>.<span class="pl-smi">_go</span>;
+    <span class="pl-k">var</span> _go <span class="pl-k">=</span> <span class="pl-v">this</span>.<span class="pl-smi">_go</span>;
     <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-en">Action</span>(<span class="pl-k">function</span>(<span class="pl-smi">_cb</span>) {
         <span class="pl-k">return</span> <span class="pl-en">_go</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
             <span class="pl-k">var</span> _data <span class="pl-k">=</span> <span class="pl-en">cb</span>(data);
@@ -201,7 +202,7 @@ readFileAction
 <p>What we can do to make it simpler? It's a complex problem, we start solving it by simplify it: <strong>Action.js use <code>Error</code> type as a special type to pass error information to the downstream</strong>, what does this mean?</p>
 
 <div class="highlight highlight-source-js"><pre><span class="pl-c1">Action</span>.<span class="pl-c1">prototype</span>.<span class="pl-en">next</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">cb</span>) {
-    <span class="pl-k">var</span> _go <span class="pl-k">=</span> <span class="pl-smi">this</span>.<span class="pl-smi">_go</span>;
+    <span class="pl-k">var</span> _go <span class="pl-k">=</span> <span class="pl-v">this</span>.<span class="pl-smi">_go</span>;
     <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-en">Action</span>(<span class="pl-k">function</span>(<span class="pl-smi">_cb</span>) {
         <span class="pl-k">return</span> <span class="pl-en">_go</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
             <span class="pl-k">if</span> (data <span class="pl-k">instanceof</span> Error) {
@@ -229,7 +230,7 @@ readFileAction
 <p><code>next</code> ensure the <code>cb</code> it received, <strong>will never receive an <code>Error</code></strong>, we just skip <code>cb</code> and pass <code>Error</code> downstream, symmetrically, we define a function which only deal with <code>Error</code>, and let normal values pass:</p>
 
 <div class="highlight highlight-source-js"><pre><span class="pl-c1">Action</span>.<span class="pl-c1">prototype</span>.<span class="pl-en">guard</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">cb</span>) {
-    <span class="pl-k">var</span> _go <span class="pl-k">=</span> <span class="pl-smi">this</span>.<span class="pl-smi">_go</span>;
+    <span class="pl-k">var</span> _go <span class="pl-k">=</span> <span class="pl-v">this</span>.<span class="pl-smi">_go</span>;
     <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-en">Action</span>(<span class="pl-k">function</span>(<span class="pl-smi">_cb</span>) {
         <span class="pl-k">return</span> <span class="pl-en">_go</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
            <span class="pl-k">if</span> (data <span class="pl-k">instanceof</span> Error) {
@@ -317,7 +318,7 @@ readFileAction
 <p>So here let me present the final version of <code>go</code>:</p>
 
 <div class="highlight highlight-source-js"><pre><span class="pl-c1">Action</span>.<span class="pl-c1">prototype</span>.<span class="pl-en">go</span> <span class="pl-k">=</span> <span class="pl-k">function</span>(<span class="pl-smi">cb</span>) {
-    <span class="pl-k">return</span> <span class="pl-smi">this</span>.<span class="pl-en">_go</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
+    <span class="pl-k">return</span> <span class="pl-v">this</span>.<span class="pl-en">_go</span>(<span class="pl-k">function</span>(<span class="pl-smi">data</span>) {
         <span class="pl-k">if</span> (data <span class="pl-k">instanceof</span> Error) {
             <span class="pl-k">throw</span> data;
         } <span class="pl-k">else</span> <span class="pl-k">if</span> (cb <span class="pl-k">!=</span> <span class="pl-c1">null</span>) {
@@ -385,7 +386,7 @@ readFileAction
 <li><p><a href="https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise">Difference from Promise</a> to get a deeper understanding.</p></li>
 <li><p><a href="https://github.com/winterland1989/Action.js/wiki/Return-value-of-go">Return value of go</a> to learn how to cancel an <code>Action</code>.</p></li>
 <li><p><a href="https://github.com/winterland1989/Action.js/wiki/Signal-and-pump">Signal and pump</a> to see how <code>Action</code> making async UI management easy.</p></li>
-<li><p><a href="https://github.com/winterland1989/Action.js/wiki/API-document">API doc</a> for interesting things like <code>Action.parallel</code>, <code>Action.race</code>, <code>Action.sequence</code> and <code>Action.retry</code>.</p></li>
+<li><p><a href="https://github.com/winterland1989/Action.js/wiki/API-document">API doc</a> for interesting things like <code>Action.parallel</code>, <code>Action.race</code>, <code>Action.throttle</code> and <code>Action.retry</code>.</p></li>
 <li><p><a href="https://github.com/winterland1989/Action.js/wiki/ajaxHelpers-API-document">ajaxHelpers API doc</a> for front-end needs like <code>ajax</code>, <code>jsonp</code> and <code>parseParam/buildParam</code>.</p></li>
 </ul>
 
@@ -398,7 +399,7 @@ readFileAction
 
 <p>With <code>Promise</code> added to ES6 and ES7 <code>async/await</code> proposal, one must ask, why another library to do the same things again?</p>
 
-<p>Because <code>Action</code> is not <code>Promise</code>, It's a faster, simpler and full feature alternative comes with more flexible semantics. Actually <code>Action</code> have a <a href="https://github.com/winterland1989/Action.js/blob/master/Action.coffee#L205">very elegant <code>Action.co</code> implementation</a> to work with generators, nevertheless, use this library if you:</p>
+<p>Because <code>Action</code> is not <code>Promise</code>, It's a faster, simpler and full feature alternative comes with more flexible semantics. Actually <code>Action</code> have a <a href="https://github.com/winterland1989/Action.js/blob/master/Action.coffee#L233">very elegant <code>Action.co</code> implementation</a> to work with generators, nevertheless, use this library if you:</p>
 
 <ul>
 <li><p>Want something small, fast and memory effient in browser.</p></li>
@@ -466,6 +467,9 @@ fileA
 <h1>
 <a id="changelog" class="anchor" href="#changelog" aria-hidden="true"><span class="octicon octicon-link"></span></a>Changelog<a name="Changelog"></a>
 </h1>
+
+<p>V4.1.0
+add <code>throttle</code>, now <code>parallel</code> and <code>sequence</code> are implemented by <code>throttle</code>.</p>
 
 <p>v3.1.0</p>
 
