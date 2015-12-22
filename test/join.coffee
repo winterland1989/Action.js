@@ -4,8 +4,6 @@ Action = require '../Action.coffee'
 module.exports =
     new Action (cb) ->
         testJoin = Action.join monadicActionFoo('data1'), monadicActionBar('data2'), (data1, data2) ->
-            console.log data1
-            console.log data2
             assertData data1, 'data1foo'
             assertData data2, 'data2bar'
 

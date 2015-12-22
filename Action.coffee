@@ -127,42 +127,22 @@ Action.retry = (times, action) ->
         else new Error 'RETRY_ERROR: Retry limit reached'
 
 # run an Array of Actions in parallel, return an Action wraps results in an Array
-Action.parallel = (actions, stopAtError = false) ->
-    l = actions.length
-    if l > 0
-        new Action (cb) ->
-            countDown = l
-            results = new Array(l)
-            returns = new Array(l)
-            fireByIndex = (index) -> (data) ->
-                if (data instanceof Error) and stopAtError
-                    cb?(data)
-                    cb = undefined
-                    countDown = -1
-                else
-                    results[index] = data
-                    if --countDown == 0 then cb results
-            for action, i in actions
-                returns[i] = action._go fireByIndex(i)
-            returns
-    else Action.wrap []
-
-# run an Array of Actions in parallel, return an Action wraps results in an Array
 # after returned Action are fired, there will be maxmium n source Actions are running.
 Action.throttle = (actions, n, stopAtError = false) ->
     l = actions.length
     if n > l then n = l
     if l > 0
         new Action (cb) ->
-            countUp = 0
+            countDown = l
             results = new Array(l)
             fireByIndex = (index) -> (data) ->
-                countUp++
-                if data instanceof Error and stopAtError
+                countDown--
+                if data instanceof Error and stopAtError and countDown != -1
+                    countDown = -1
                     cb data
                 else
                     results[index] = data
-                    if countUp == l
+                    if countDown == 0
                         cb results
                     if n++ < l
                         actions[n-1]._go fireByIndex(n-1)
@@ -172,6 +152,14 @@ Action.throttle = (actions, n, stopAtError = false) ->
                 action._go fireByIndex(i)
 
     else Action.wrap []
+
+# run an Array of Actions in parallel, return an Action wraps results in an Array
+Action.parallel = (actions, stopAtError = false) ->
+    Action.throttle actions, actions.length, stopAtError
+
+# run an Array of Actions in sequence, return an Action wraps results in an Array
+Action.sequence = (actions, stopAtError = false) ->
+    Action.throttle actions, 1, stopAtError
 
 # join two Actions together
 Action.join = (action1, action2, cb2, stopAtError = false) ->
@@ -253,7 +241,6 @@ Action.co = (genFn) -> () ->
     gen = genFn.apply this, arguments
     new Action (cb) ->
         spawn gen, gen.next().value, cb
-
 
 if module? and module.exports?
     module.exports = Action

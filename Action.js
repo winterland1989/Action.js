@@ -229,45 +229,6 @@
     });
   };
 
-  Action.parallel = function(actions, stopAtError) {
-    var l;
-    if (stopAtError == null) {
-      stopAtError = false;
-    }
-    l = actions.length;
-    if (l > 0) {
-      return new Action(function(cb) {
-        var action, countDown, fireByIndex, i, j, len, results, returns;
-        countDown = l;
-        results = new Array(l);
-        returns = new Array(l);
-        fireByIndex = function(index) {
-          return function(data) {
-            if ((data instanceof Error) && stopAtError) {
-              if (typeof cb === "function") {
-                cb(data);
-              }
-              cb = void 0;
-              return countDown = -1;
-            } else {
-              results[index] = data;
-              if (--countDown === 0) {
-                return cb(results);
-              }
-            }
-          };
-        };
-        for (i = j = 0, len = actions.length; j < len; i = ++j) {
-          action = actions[i];
-          returns[i] = action._go(fireByIndex(i));
-        }
-        return returns;
-      });
-    } else {
-      return Action.wrap([]);
-    }
-  };
-
   Action.throttle = function(actions, n, stopAtError) {
     var l;
     if (stopAtError == null) {
@@ -279,17 +240,18 @@
     }
     if (l > 0) {
       return new Action(function(cb) {
-        var action, countUp, fireByIndex, i, j, len, results, results1, startingActions;
-        countUp = 0;
+        var action, countDown, fireByIndex, i, j, len, results, results1, startingActions;
+        countDown = l;
         results = new Array(l);
         fireByIndex = function(index) {
           return function(data) {
-            countUp++;
-            if (data instanceof Error && stopAtError) {
+            countDown--;
+            if (data instanceof Error && stopAtError && countDown !== -1) {
+              countDown = -1;
               return cb(data);
             } else {
               results[index] = data;
-              if (countUp === l) {
+              if (countDown === 0) {
                 cb(results);
               }
               if (n++ < l) {
@@ -309,6 +271,20 @@
     } else {
       return Action.wrap([]);
     }
+  };
+
+  Action.parallel = function(actions, stopAtError) {
+    if (stopAtError == null) {
+      stopAtError = false;
+    }
+    return Action.throttle(actions, actions.length, stopAtError);
+  };
+
+  Action.sequence = function(actions, stopAtError) {
+    if (stopAtError == null) {
+      stopAtError = false;
+    }
+    return Action.throttle(actions, 1, stopAtError);
   };
 
   Action.join = function(action1, action2, cb2, stopAtError) {

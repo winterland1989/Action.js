@@ -388,7 +388,7 @@ When to use this library?
 
 With `Promise` added to ES6 and ES7 `async/await` proposal, one must ask, why another library to do the same things again?
 
-Because `Action` is not `Promise`, It's a faster, simpler and full feature alternative comes with more flexible semantics. Actually `Action` have a [very elegant `Action.co` implementation](https://github.com/winterland1989/Action.js/blob/master/Action.coffee#L245) to work with generators, nevertheless, use this library if you:
+Because `Action` is not `Promise`, It's a faster, simpler and full feature alternative comes with more flexible semantics. Actually `Action` have a [very elegant `Action.co` implementation](https://github.com/winterland1989/Action.js/blob/master/Action.coffee#L233) to work with generators, nevertheless, use this library if you:
 
 + Want something small, fast and memory effient in browser.
 
@@ -462,8 +462,8 @@ The choice of using `Error` to skip `next` and hit `guard` is not arbitrary, ins
 Changelog<a name="Changelog"></a>
 =================================
 
-V4.0.0
-add `throttle`, remove `sequence` since it's just a `throttle` with `limit = 1`.
+V4.1.0
+add `throttle`, now `parallel` and `sequence` are implemented by `throttle`.
 
 v3.1.0
 
