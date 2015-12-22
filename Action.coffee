@@ -147,10 +147,36 @@ Action.parallel = (actions, stopAtError = false) ->
             returns
     else Action.wrap []
 
+# run an Array of Actions in parallel, return an Action wraps results in an Array
+# after returned Action are fired, there will be maxmium n source Actions are running.
+Action.throttle = (actions, n, stopAtError = false) ->
+    l = actions.length
+    if n > l then n = l
+    if l > 0
+        new Action (cb) ->
+            countUp = 0
+            results = new Array(l)
+            fireByIndex = (index) -> (data) ->
+                countUp++
+                if data instanceof Error and stopAtError
+                    cb data
+                else
+                    results[index] = data
+                    if countUp == l
+                        cb results
+                    if n++ < l
+                        actions[n-1]._go fireByIndex(n-1)
+
+            startingActions = actions[0..n-1]
+            for action, i in startingActions
+                action._go fireByIndex(i)
+
+    else Action.wrap []
+
 # join two Actions together
 Action.join = (action1, action2, cb2, stopAtError = false) ->
-    returns = new Array(2)
     new Action (cb) ->
+        returns = new Array(2)
         result1 = result2 = undefined
         countDown = 2
         returns[0] = action1._go (data) ->
@@ -190,25 +216,6 @@ Action.race = (actions, stopAtError = false) ->
                         cb new Error 'RACE_ERROR: All actions failed'
             returns
     else Action.wrap new Error 'RACE_ERROR: All actions failed'
-
-# helper for step in sequence
-sequenceStep = (countUp, limit, stopAtError, actions, results, cb) ->
-    actions[countUp]._go (data) ->
-        if (data instanceof Error) and stopAtError
-            cb data
-        else
-            results[countUp++] = data
-            if countUp == limit then cb results
-            else sequenceStep countUp, limit, stopAtError, actions, results, cb
-
-# run an Array of Actions in sequence, return an Action wraps results in an Array
-Action.sequence = (actions, stopAtError = false) ->
-    l = actions.length
-    if l > 0
-        new Action (cb) ->
-            results = new Array(l)
-            sequenceStep 0, l, stopAtError, actions, results, cb
-    else Action.wrap []
 
 # Helpers for makeNodeAction
 makeNodeCb = (cb) -> (err, data) ->

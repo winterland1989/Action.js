@@ -5,6 +5,7 @@ Action.js, a fast, small, full feature async library
 + [Changelog](#Changelog)
 + [Benchmark](https://github.com/winterland1989/Action.js/wiki/Benchmark)
 + [API document](https://github.com/winterland1989/Action.js/wiki/API-document)
++ [ajaxHelpers API doc](https://github.com/winterland1989/Action.js/wiki/ajaxHelpers-API-document)
 + Usage: 
     + `npm i action-js` and `var Action = require('action-js')`.
     + Clone this repo and use `Action.js` and `ajaxHelper.js` with AMD or CMD loader, bundler.
@@ -12,7 +13,7 @@ Action.js, a fast, small, full feature async library
 
 + Highlights:
     + [Blazing fast](https://github.com/winterland1989/Action.js/wiki/Benchmark) and extremly small(4.2k/minified 1.4k/gzipped)
-    + Full feature APIs like `retry`, `parallel`, `race`, `sequence` and more.
+    + Full feature APIs like `retry`, `parallel`, `race`, `throttle` and more.
     + [Cancellable](https://github.com/winterland1989/Action.js/wiki/Return-value-of-go) and [retriable](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise) semantics.
     + `Action.co` to work with generator functions.
     + [Signal and pump](https://github.com/winterland1989/Action.js/wiki/Signal-And-Pump) provides easy and composable async UI management(form validation...).
@@ -375,7 +376,7 @@ That's all core functions of `Action`, but it's much more powerful than first lo
 
 + [Signal and pump](https://github.com/winterland1989/Action.js/wiki/Signal-and-pump) to see how `Action` making async UI management easy.
 
-+ [API doc](https://github.com/winterland1989/Action.js/wiki/API-document) for interesting things like `Action.parallel`, `Action.race`, `Action.sequence` and `Action.retry`.
++ [API doc](https://github.com/winterland1989/Action.js/wiki/API-document) for interesting things like `Action.parallel`, `Action.race`, `Action.throttle` and `Action.retry`.
 
 + [ajaxHelpers API doc](https://github.com/winterland1989/Action.js/wiki/ajaxHelpers-API-document) for front-end needs like `ajax`, `jsonp` and `parseParam/buildParam`.
 
@@ -387,7 +388,7 @@ When to use this library?
 
 With `Promise` added to ES6 and ES7 `async/await` proposal, one must ask, why another library to do the same things again?
 
-Because `Action` is not `Promise`, It's a faster, simpler and full feature alternative comes with more flexible semantics. Actually `Action` have a [very elegant `Action.co` implementation](https://github.com/winterland1989/Action.js/blob/master/Action.coffee#L205) to work with generators, nevertheless, use this library if you:
+Because `Action` is not `Promise`, It's a faster, simpler and full feature alternative comes with more flexible semantics. Actually `Action` have a [very elegant `Action.co` implementation](https://github.com/winterland1989/Action.js/blob/master/Action.coffee#L245) to work with generators, nevertheless, use this library if you:
 
 + Want something small, fast and memory effient in browser.
 
@@ -460,6 +461,9 @@ The choice of using `Error` to skip `next` and hit `guard` is not arbitrary, ins
 
 Changelog<a name="Changelog"></a>
 =================================
+
+V4.0.0
+add `throttle`, remove `sequence` since it's just a `throttle` with `limit = 1`.
 
 v3.1.0
 

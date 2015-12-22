@@ -8,7 +8,7 @@ signal = require './signal.coffee'
 retry = require './retry.coffee'
 parallel = require './parallel.coffee'
 join = require './join.coffee'
-sequence = require './sequence.coffee'
+throttle = require './throttle.coffee'
 safes = require './safes.coffee'
 makeNodeAction = require './makeNodeAction.coffee'
 co = require './co.coffee'
@@ -38,8 +38,8 @@ core
     console.log 'Test Action.join ======================='
     join
 .next ->
-    console.log 'Test Action.sequence ==================='
-    sequence
+    console.log 'Test Action.throttle ==================='
+    throttle
 .next ->
     console.log 'Test Action.safe and safeRaw ==========='
     safes
