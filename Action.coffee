@@ -133,6 +133,7 @@ Action.throttle = (actions, n, stopAtError = false) ->
     if n > l then n = l
     if l > 0
         new Action (cb) ->
+            countUp = n
             countDown = l
             results = new Array(l)
             fireByIndex = (index) -> (data) ->
@@ -142,14 +143,16 @@ Action.throttle = (actions, n, stopAtError = false) ->
                     cb data
                 else
                     results[index] = data
-                    if countDown == 0
-                        cb results
-                    if n++ < l
-                        actions[n-1]._go fireByIndex(n-1)
+                    if countDown == 0 then cb results
+                    else if countUp < l
+                        # add new job
+                        actions[countUp]._go fireByIndex(countUp)
+                        countUp++
 
-            startingActions = actions[0..n-1]
-            for action, i in startingActions
-                action._go fireByIndex(i)
+            handlerArray = new Array(n)
+            for i in [0..n-1]
+                handlerArray[i] = actions[i]._go fireByIndex(i)
+            handlerArray
 
     else Action.wrap []
 

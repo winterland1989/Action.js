@@ -1,6 +1,6 @@
 {
   "name": "action-js",
-  "version": "4.1.0",
+  "version": "4.1.1",
   "description": "fast, small, full feature async library",
   "main": "Action.js",
   "directories": {

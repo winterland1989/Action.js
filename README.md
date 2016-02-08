@@ -22,7 +22,61 @@ Action.js, a fast, small, full feature async library
 What is `Action`
 ----------------
 
-Interested? `Action` is a fast and clean alternative to both `Promise` and `Observable`，Its core is an extremly simple javascript class:
+Interested? `Action` is a fast and clean alternative to both `Promise`(and `Observable` if you'd like to), it's intended to solve what `Promise` can't solve:
+
++ Can't run async actions without reallocate new instances, see [lazy promise](https://github.com/petkaantonov/bluebird/issues/812), [throttling](https://github.com/petkaantonov/bluebird/issues/570).
+
++ Sliently eat errors, see [Unhandled Rejection](https://github.com/nodejs/node/issues/830), and [related hack](https://github.com/nodejs/node/issues/5084).
+
+Besides all the benifits, `Action` run at blazing fast speed with simpler and smaller code. A simple example:
+
+```js
+new Action(function(cb){
+    readFile('fileA', function(err, data){
+        if (err){
+            cb(err);
+        }else{
+            cb(data);
+        }
+    });
+})
+.next(function(data){
+    // sync process
+    return processData(data);
+})
+.next(function(data){
+    // async process
+    return new Action(function(cb){
+        processDataAsync(data, cb);
+    })
+})
+.next(function(data){
+    // This process will be skip if previous steps pass an Error
+    return anotherProcess(data);
+})
+.guard(function(e){
+    // This process will be skip if there's no Errors
+    return processError(e);
+});
+.go(function(data){console.log data});
+```
+
+It looks like `Promise` with some differences:
+
++ Add a `go` call when you want to fire an `Action`, and you can fire multiple times.
+
++ If you come across an `Error`, just pass it down like normal values, see `safe/safeRaw` in next chapter.
+
++ `next` only pass none `Error` value to its callback, and `guard` only call its callback if upstream pass `Error` down, if you'd like to handled `Error` and normal value inside one callback, use `_next`. 
+
++ `Error` will never be swallowed, and now you can use `throw` to break your program if you really want to.
+
+You can also use `makeNodeAction` to replace `promisify` in other promise library, let's get into the core since now you must have a lot of questions.
+
+How does `Action` works
+-----------------------
+
+`Action`'s core is an extremly simple javascript class(to mimic haskell's `newtype`):
 
 ```js
 var Action = function(go) {
@@ -462,14 +516,17 @@ The choice of using `Error` to skip `next` and hit `guard` is not arbitrary, ins
 Changelog<a name="Changelog"></a>
 =================================
 
+V4.1.1
+Small `throttle` optimization.
+
 V4.1.0
-add `throttle`, now `parallel` and `sequence` are implemented by `throttle`.
+Add `throttle`, now `parallel` and `sequence` are implemented by `throttle`.
 
 v3.1.0
 
-1. add `stopAtError` flag to `Action.join`.
+1. Add `stopAtError` flag to `Action.join`.
 
-2. change `ajaxHelpers.buildParam` behavior when input contain arrays, now `foo: [1,2,3]` will output `foo=1&foo=2&foo=3`.
+2. Change `ajaxHelpers.buildParam` behavior when input contain arrays, now `foo: [1,2,3]` will output `foo=1&foo=2&foo=3`.
 
 v3.0.0
 Seperate ajax related stuff into `ajaxHelper.js`.

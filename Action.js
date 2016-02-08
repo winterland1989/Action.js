@@ -240,7 +240,8 @@
     }
     if (l > 0) {
       return new Action(function(cb) {
-        var action, countDown, fireByIndex, i, j, len, results, results1, startingActions;
+        var countDown, countUp, fireByIndex, handlerArray, i, j, ref, results;
+        countUp = n;
         countDown = l;
         results = new Array(l);
         fireByIndex = function(index) {
@@ -252,21 +253,19 @@
             } else {
               results[index] = data;
               if (countDown === 0) {
-                cb(results);
-              }
-              if (n++ < l) {
-                return actions[n - 1]._go(fireByIndex(n - 1));
+                return cb(results);
+              } else if (countUp < l) {
+                actions[countUp]._go(fireByIndex(countUp));
+                return countUp++;
               }
             }
           };
         };
-        startingActions = actions.slice(0, +(n - 1) + 1 || 9e9);
-        results1 = [];
-        for (i = j = 0, len = startingActions.length; j < len; i = ++j) {
-          action = startingActions[i];
-          results1.push(action._go(fireByIndex(i)));
+        handlerArray = new Array(n);
+        for (i = j = 0, ref = n - 1; 0 <= ref ? j <= ref : j >= ref; i = 0 <= ref ? ++j : --j) {
+          handlerArray[i] = actions[i]._go(fireByIndex(i));
         }
-        return results1;
+        return handlerArray;
       });
     } else {
       return Action.wrap([]);
