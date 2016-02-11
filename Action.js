@@ -129,11 +129,11 @@
   };
 
   Action.freeze = function(action) {
-    var callbacks, data, pending, ret;
+    var callbacks, data, handler, pending;
     pending = true;
     data = void 0;
     callbacks = [];
-    ret = action._go(function(_data) {
+    handler = action._go(function(_data) {
       var cb, j, len;
       if (pending) {
         data = _data;
@@ -151,7 +151,7 @@
       } else {
         cb(data);
       }
-      return ret;
+      return handler;
     });
   };
 
@@ -240,10 +240,10 @@
     }
     if (l > 0) {
       return new Action(function(cb) {
-        var countDown, countUp, fireByIndex, handlerArray, i, j, ref, results;
+        var countDown, countUp, fireByIndex, handlerArray, i, j, ref, resultArray;
         countUp = n;
         countDown = l;
-        results = new Array(l);
+        resultArray = new Array(l);
         fireByIndex = function(index) {
           return function(data) {
             countDown--;
@@ -251,9 +251,9 @@
               countDown = -1;
               return cb(data);
             } else {
-              results[index] = data;
+              resultArray[index] = data;
               if (countDown === 0) {
-                return cb(results);
+                return cb(resultArray);
               } else if (countUp < l) {
                 actions[countUp]._go(fireByIndex(countUp));
                 return countUp++;
@@ -291,35 +291,34 @@
       stopAtError = false;
     }
     return new Action(function(cb) {
-      var countDown, result1, result2, returns;
-      returns = new Array(2);
+      var countDown, result1, result2;
       result1 = result2 = void 0;
       countDown = 2;
-      returns[0] = action1._go(function(data) {
-        result1 = data;
-        if ((result1 instanceof Error) && stopAtError) {
-          countDown = -1;
-          return cb(result1);
-        } else {
-          countDown--;
-          if (countDown === 0) {
-            return fireByResult(cb, cb2(result1, result2));
+      return [
+        action1._go(function(data) {
+          result1 = data;
+          if ((result1 instanceof Error) && stopAtError) {
+            countDown = -1;
+            return cb(result1);
+          } else {
+            countDown--;
+            if (countDown === 0) {
+              return fireByResult(cb, cb2(result1, result2));
+            }
           }
-        }
-      });
-      returns[1] = action2._go(function(data) {
-        result2 = data;
-        if ((result2 instanceof Error) && stopAtError) {
-          countDown = -1;
-          return cb(result2);
-        } else {
-          countDown--;
-          if (countDown === 0) {
-            return fireByResult(cb, cb2(result1, result2));
+        }), action2._go(function(data) {
+          result2 = data;
+          if ((result2 instanceof Error) && stopAtError) {
+            countDown = -1;
+            return cb(result2);
+          } else {
+            countDown--;
+            if (countDown === 0) {
+              return fireByResult(cb, cb2(result1, result2));
+            }
           }
-        }
-      });
-      return returns;
+        })
+      ];
     });
   };
 
@@ -331,12 +330,12 @@
     l = actions.length;
     if (l > 0) {
       return new Action(function(cb) {
-        var action, countDown, i, j, len, returns;
+        var action, countDown, handlerArray, i, j, len;
         countDown = l;
-        returns = new Array(l);
+        handlerArray = new Array(l);
         for (i = j = 0, len = actions.length; j < len; i = ++j) {
           action = actions[i];
-          returns[i] = action._go(function(data) {
+          handlerArray[i] = action._go(function(data) {
             countDown--;
             if ((!(data instanceof Error)) || stopAtError) {
               if (typeof cb === "function") {
@@ -349,7 +348,7 @@
             }
           });
         }
-        return returns;
+        return handlerArray;
       });
     } else {
       return Action.wrap(new Error('RACE_ERROR: All actions failed'));

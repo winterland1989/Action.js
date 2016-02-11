@@ -31,6 +31,7 @@ Interested? `Action` is a fast and clean alternative to both `Promise`(and `Obse
 Besides all the benifits, `Action` run at blazing fast speed with simpler and smaller code. A simple example:
 
 ```js
+var Action = require('action-js');
 new Action(function(cb){
     readFile('fileA', function(err, data){
         if (err){
@@ -63,7 +64,7 @@ new Action(function(cb){
 
 It looks like `Promise` with some differences:
 
-+ Add a `go` call when you want to fire an `Action`, and you can fire multiple times.
++ Add a `go` call when you want to fire an `Action`, and you can fire multiple times, which means `Action`'s lazily executed, so you can do retry/throttle...
 
 + If you come across an `Error`, just pass it down like normal values, see `safe/safeRaw` in next chapter.
 
@@ -99,7 +100,7 @@ var readFileAction = new Action(function(cb){
 Now if we provide a callback to `readFileAction._go`:
 
 ```js
-readFileAction._go(function(data){
+readFileAction._go(function(err, data){
     console.log(data);
 })
 ```
@@ -118,11 +119,11 @@ Now we can add a method to compose another callback with this contination:
 
 ```js
 Action.prototype._next = function(cb) {
-    var _go = this._go;
+    var self = this;
     return new Action(function(_cb) {
-        return _go(function(data) {
-            var _data = cb(data);
-            return _cb(_data);
+        return self._go(function(data) {
+            var _data = cb(data); // this cb is what we pass to next
+            return _cb(_data); // this _cb has not been passed yet!
         });
     });
 };
@@ -132,15 +133,13 @@ Let's break down `_next` a little here:
 
 + `_next` accept a callback `cb`, and return a new `Action`.
 
-+ When the new `Action` fired with `_cb`, the original `Action`'s action will be fired first, and send the value to `cb`.
-
-+ We apply `cb` with `data` from the original `Action`, then send the `_data` produced by `cb(data)` to `_cb`.
++ When the new `Action` fired with `_cb`, the original `Action`'s action will be fired first, and send the value to `cb`, then send the `_data` produced by `cb(data)` to `_cb`.
 
 + The order is (original `Action`'s `_go`) --> (`cb` which `_next` received) --> (`_cb` we give to our new `Action`).
 
-+ Since we haven't fired our new `Action` yet, we haven't got the `_cb`, the whole callback chain is saved in our new `Action`.
++ Since we haven't fired our new `Action` yet, we haven't got the `_cb`, the whole contination is saved in our new `Action`.
 
-With our `_next`, we can chain multiply callbacks and pass data between them:
+With our `_next`, we can chain multiply callbacks, note how data flows between them:
 
 ```js
 readFileAction
@@ -160,15 +159,15 @@ readFileAction
 })
 ```
 
-Each `_next` return a new `Action`, now if we give the final `Action` a callback with `_go`, the whole callback chain will be fired sequential.
+Each `_next` return a new `Action`, if we give the final `Action` a callback with `_go`, the whole callback chain will be fired sequential.
 
 Nice, we just use a very simple class, one very simple functions, the callbacks are written in a much more readable way now, but we have a key problem to be solved yet: what if we want to nest async `Action` inside an `Action`? Turn out with a little modification to our `_next` function, we can handle that:
 
 ```js
 Action.prototype._next = function(cb) {
-    var _go = this._go;
+    var self = this;
     return new Action(function(_cb) {
-        return _go(function(data) {
+        return self._go(function(data) {
             var _data = cb(data);
             if (_data instanceof Action) {
                 return _data._go(_cb);
@@ -230,11 +229,11 @@ What we can do to make it simpler? It's a complex problem, we start solving it b
 
 ```js
 Action.prototype.next = function(cb) {
-    var _go = this._go;
+    var self = this;
     return new Action(function(_cb) {
-        return _go(function(data) {
+        return self._go(function(data) {
             if (data instanceof Error) {
-                return _cb(data);
+                return _cb(data); // we directly skip cb here
             } else {
                 var _data = cb(data);
                 if (_data instanceof Action) {
@@ -248,21 +247,19 @@ Action.prototype.next = function(cb) {
 };
 ```
 
-Here, let me present the final version of our `next` function, comparing to `_next` we write before:
+Let me present the final version of our `next` function, comparing to `_next` we write before:
 
 + It still reture a new `Action`, when it fired, the original action are called.
 
-+ We checked if the `data` coming from upstream is `instanceof Error`, if it's not, everything as usual, we feed it to `cb` that `next` received.
-
-+ But if it's an `Error`, we skip `cb`, pass it to `_cb` which we don't have now.
++ We checked if the `data` coming from upstream is `instanceof Error`, if it's not, everything as usual, we feed it to `cb` that `next` received. But if it's an `Error`, we skip `cb`, pass it directly to `_cb`.
 
 `next` ensure the `cb` it received, **will never receive an `Error`**, we just skip `cb` and pass `Error` downstream, symmetrically, we define a function which only deal with `Error`, and let normal values pass:
 
 ```js
 Action.prototype.guard = function(cb) {
-    var _go = this._go;
+    var self = this;
     return new Action(function(_cb) {
-        return _go(function(data) {
+        return self._go(function(data) {
            if (data instanceof Error) {
             var _data = cb(data);
                 if (_data instanceof Action) {
@@ -326,7 +323,7 @@ new Action(function(cb){
 
 The final result will be produced by `anotherProcess` if `someProcessMayWentWrong` didn't go wrong and `readFile` didn't fail, otherwise it will be produced by `processError`.
 
-You can place `guard` in the middle of the chain, all `Errors` before it will be handled by it, and the value it produced, sync or async, will be passed to the rest of the chain.
+You can place `guard` in the middle of the chain, all `Errors` before it will be handled by it, and the value it produced, sync or async, will be passed down to the rest of the chain.
 
 What if we don't supply a `guard`? Since we have to supply a callback to `_go`, we can check if the final result is an `Error` or not like this:
 
@@ -373,7 +370,6 @@ new Action(function(cb){
             // suppose we got an Error here
             cb(err);
         }else{
-
             cb(data);
         }
     });

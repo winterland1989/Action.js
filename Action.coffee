@@ -1,7 +1,6 @@
 # helper for auto choosing fmap or >>=
 fireByResult = (cb, data) ->
-    if data instanceof Action
-        data._go cb
+    if data instanceof Action then data._go cb
     else cb data
 
 # Main class
@@ -80,7 +79,7 @@ Action.freeze = (action) ->
     pending = true
     data = undefined
     callbacks = []
-    ret = action._go (_data) ->
+    handler = action._go (_data) ->
         if pending
             data = _data
             pending = false
@@ -88,7 +87,7 @@ Action.freeze = (action) ->
             callbacks = undefined
     new Action (cb) ->
         if pending then callbacks.push cb else cb data
-        ret
+        handler
 
 # helper to supply custom error
 Action.safe = (err, fn) -> (data) ->
@@ -135,15 +134,15 @@ Action.throttle = (actions, n, stopAtError = false) ->
         new Action (cb) ->
             countUp = n
             countDown = l
-            results = new Array(l)
+            resultArray = new Array(l)
             fireByIndex = (index) -> (data) ->
                 countDown--
                 if data instanceof Error and stopAtError and countDown != -1
                     countDown = -1
                     cb data
                 else
-                    results[index] = data
-                    if countDown == 0 then cb results
+                    resultArray[index] = data
+                    if countDown == 0 then cb resultArray
                     else if countUp < l
                         # add new job
                         actions[countUp]._go fireByIndex(countUp)
@@ -153,7 +152,6 @@ Action.throttle = (actions, n, stopAtError = false) ->
             for i in [0..n-1]
                 handlerArray[i] = actions[i]._go fireByIndex(i)
             handlerArray
-
     else Action.wrap []
 
 # run an Array of Actions in parallel, return an Action wraps results in an Array
@@ -167,27 +165,27 @@ Action.sequence = (actions, stopAtError = false) ->
 # join two Actions together
 Action.join = (action1, action2, cb2, stopAtError = false) ->
     new Action (cb) ->
-        returns = new Array(2)
         result1 = result2 = undefined
         countDown = 2
-        returns[0] = action1._go (data) ->
-            result1 = data
-            if (result1 instanceof Error) and stopAtError
-                countDown = -1
-                cb result1
-            else
-                countDown--
-                if countDown == 0 then fireByResult(cb, (cb2 result1, result2))
+        [
+            action1._go (data) ->
+                result1 = data
+                if (result1 instanceof Error) and stopAtError
+                    countDown = -1
+                    cb result1
+                else
+                    countDown--
+                    if countDown == 0 then fireByResult(cb, (cb2 result1, result2))
 
-        returns[1] = action2._go (data) ->
-            result2 = data
-            if (result2 instanceof Error) and stopAtError
-                countDown = -1
-                cb result2
-            else
-                countDown--
-                if countDown == 0 then fireByResult(cb, (cb2 result1, result2))
-        returns
+            action2._go (data) ->
+                result2 = data
+                if (result2 instanceof Error) and stopAtError
+                    countDown = -1
+                    cb result2
+                else
+                    countDown--
+                    if countDown == 0 then fireByResult(cb, (cb2 result1, result2))
+        ]
 
 # run an Array of Actions in parallel, return an Action wraps first result
 Action.race = (actions, stopAtError = false) ->
@@ -195,9 +193,9 @@ Action.race = (actions, stopAtError = false) ->
     if l > 0
         new Action (cb) ->
             countDown = l
-            returns = new Array(l)
+            handlerArray = new Array(l)
             for action, i in actions
-                returns[i] = action._go (data) ->
+                handlerArray[i] = action._go (data) ->
                     countDown--
                     if (data not instanceof Error) or stopAtError
                         cb?(data)
@@ -205,12 +203,11 @@ Action.race = (actions, stopAtError = false) ->
                         countDown = -1
                     else if countDown == 0
                         cb new Error 'RACE_ERROR: All actions failed'
-            returns
+            handlerArray
     else Action.wrap new Error 'RACE_ERROR: All actions failed'
 
 # Helpers for makeNodeAction
-makeNodeCb = (cb) -> (err, data) ->
-    cb if err then err else data
+makeNodeCb = (cb) -> (err, data) -> cb if err then err else data
 
 # make an Action from a node style function
 Action.makeNodeAction = (nodeAPI) -> (a,b,c) ->
