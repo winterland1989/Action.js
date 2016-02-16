@@ -21,8 +21,15 @@ module.exports =
             return new Error 'testError'
         .next (data) ->
             assertData data, 'this assert won\'t run'
-        .guard (e) ->
+        .guard 'notTestError', (e) ->
+            throw new Error 'This will skipped'
+            e
+        .guard 'testError', (e) ->
             assertData e.message, 'testError'
+            e.message = 'testErrorChanged'
+            e
+        .guard (e) ->
+            assertData e.message, 'testErrorChanged'
             'errorHandled'
         .next (data) ->
             assertData data, 'errorHandled'

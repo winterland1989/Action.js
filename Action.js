@@ -39,12 +39,16 @@
       });
     };
 
-    Action.prototype.guard = function(cb) {
+    Action.prototype.guard = function(prefix, cb) {
       var self;
+      if (cb == null) {
+        cb = prefix;
+        prefix = void 0;
+      }
       self = this;
       return new Action(function(_cb) {
         return self._go(function(data) {
-          if (data instanceof Error) {
+          if (data instanceof Error && (!prefix || (data.message.indexOf(prefix)) === 0)) {
             return fireByResult(_cb, cb(data));
           } else {
             return _cb(data);
@@ -273,16 +277,10 @@
   };
 
   Action.parallel = function(actions, stopAtError) {
-    if (stopAtError == null) {
-      stopAtError = false;
-    }
     return Action.throttle(actions, actions.length, stopAtError);
   };
 
   Action.sequence = function(actions, stopAtError) {
-    if (stopAtError == null) {
-      stopAtError = false;
-    }
     return Action.throttle(actions, 1, stopAtError);
   };
 

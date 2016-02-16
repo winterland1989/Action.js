@@ -275,7 +275,7 @@ Action.prototype.guard = function(cb) {
 };
 ```
 
-This time, the `cb` that `guard` received are prepared for `Error` values, so we flip the logic, you can also return an `Action` if your need some async code to deal with the `Error`.
+This time, the `cb` that `guard` received are prepared for `Error` values, so we flip the logic, you can also return an `Action` if your need some async code to deal with the `Error`. Actually `guard` can receive an extra parameter before `cb` to filter what kind of `Error` `cb` can deal with, check out [source code](https://github.com/winterland1989/Action.js/blob/master/Action.coffee#L27)/[api doc](https://github.com/winterland1989/Action.js/wiki/API-document#actionprototypeguardcb--error---b).
 
 Following code demonstrate how to use our `next` and `guard`:
 
@@ -313,10 +313,14 @@ new Action(function(cb){
     // This process will be skip if previous steps pass an Error
     return anotherProcess(data);
 })
+.guard('ENOENT', function(e){
+    // This process will be called only when Error's message begin with 'ENOENT'
+    return processENOENT(e);
+});
 .guard(function(e){
     // This process will be skip if there's no Errors
     return processError(e);
-});
+})
 ._go(console.log);
 
 ```
@@ -438,7 +442,7 @@ When to use this library?
 
 With `Promise` added to ES6 and ES7 `async/await` proposal, one must ask, why another library to do the same things again?
 
-Because `Action` is not `Promise`, It's a faster, simpler and full feature alternative comes with more flexible semantics. Actually `Action` have a [very elegant `Action.co` implementation](https://github.com/winterland1989/Action.js/blob/master/Action.coffee#L233) to work with generators, nevertheless, use this library if you:
+Because `Action` is not `Promise`, It's a faster, simpler and full feature alternative comes with more flexible semantics. Actually `Action` have a [very elegant `Action.co` implementation](https://github.com/winterland1989/Action.js/blob/master/Action.coffee#L234) to work with generators, nevertheless, use this library if you:
 
 + Want something small, fast and memory effient in browser.
 
@@ -512,6 +516,9 @@ The choice of using `Error` to skip `next` and hit `guard` is not arbitrary, ins
 Changelog<a name="Changelog"></a>
 =================================
 
+V4.2.0
+`prototype.guard` now accpet an extra parameter(before cb) to guard Error based on their message (prefix). 
+
 V4.1.1
 Small `throttle` optimization.
 
@@ -580,7 +587,7 @@ License
 
 The MIT License (MIT)
 
-Copyright (c) 2015 Winterland
+Copyright (c) 2016 Winterland
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 

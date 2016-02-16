@@ -26,11 +26,13 @@ class Action
 
     # return a new Action that when fire, it will call current action first, then the callback
     # if current action want to pass a non error value to the callback, stop it and pass it on
-    guard: (cb) ->
+    # you can optional pass a prefix to filter Error by their message
+    guard: (prefix, cb) ->
+        unless cb? then cb = prefix; prefix = undefined
         self = @
         new Action (_cb) ->
             self._go (data) ->
-                if data instanceof Error
+                if data instanceof Error and (!prefix or (data.message.indexOf prefix) == 0)
                     fireByResult _cb, cb(data)
                 else _cb data
 
@@ -155,11 +157,11 @@ Action.throttle = (actions, n, stopAtError = false) ->
     else Action.wrap []
 
 # run an Array of Actions in parallel, return an Action wraps results in an Array
-Action.parallel = (actions, stopAtError = false) ->
+Action.parallel = (actions, stopAtError) ->
     Action.throttle actions, actions.length, stopAtError
 
 # run an Array of Actions in sequence, return an Action wraps results in an Array
-Action.sequence = (actions, stopAtError = false) ->
+Action.sequence = (actions, stopAtError) ->
     Action.throttle actions, 1, stopAtError
 
 # join two Actions together
