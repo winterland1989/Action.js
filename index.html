@@ -36,7 +36,6 @@
 <li><a href="#Changelog">Changelog</a></li>
 <li><a href="https://github.com/winterland1989/Action.js/wiki/Benchmark">Benchmark</a></li>
 <li><a href="https://github.com/winterland1989/Action.js/wiki/API-document">API document</a></li>
-<li><a href="https://github.com/winterland1989/Action.js/wiki/ajaxHelpers-API-document">ajaxHelpers API doc</a></li>
 <li>
 <p>Usage: </p>
 
@@ -60,10 +59,12 @@
 <code>Action.co</code> to work with generator functions.</li>
 <li>
 <a href="https://github.com/winterland1989/Action.js/wiki/Signal-And-Pump">Signal and pump</a> provides easy and composable async UI management(form validation...).</li>
-<li>Provide <code>ajax</code>, <code>jsonp</code> for front-end usage, check <code>ajaxHelper.js</code> and <a href="https://github.com/winterland1989/Action.js/wiki/ajaxHelpers-API-document">ajaxHelpers API doc</a>.</li>
 </ul>
 </li>
 </ul>
+
+<p>＋ Eco-system
+    + <a href="https://github.com/winterland1989/ajax-action">ajax-action</a></p>
 
 <h2>
 <a id="what-is-action" class="anchor" href="#what-is-action" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>What is <code>Action</code>
@@ -441,7 +442,7 @@ readFileAction
 <li><p><a href="https://github.com/winterland1989/Action.js/wiki/Return-value-of-go">Return value of go</a> to learn how to cancel an <code>Action</code>.</p></li>
 <li><p><a href="https://github.com/winterland1989/Action.js/wiki/Signal-and-pump">Signal and pump</a> to see how <code>Action</code> making async UI management easy.</p></li>
 <li><p><a href="https://github.com/winterland1989/Action.js/wiki/API-document">API doc</a> for interesting things like <code>Action.parallel</code>, <code>Action.race</code>, <code>Action.throttle</code> and <code>Action.retry</code>.</p></li>
-<li><p><a href="https://github.com/winterland1989/Action.js/wiki/ajaxHelpers-API-document">ajaxHelpers API doc</a> for front-end needs like <code>ajax</code>, <code>jsonp</code> and <code>parseParam/buildParam</code>.</p></li>
+<li><p><a href="https://github.com/winterland1989/ajax-action">ajax-action</a> for front-end needs like <code>ajax</code>, <code>jsonp</code> and <code>parseParam/buildParam</code>.</p></li>
 </ul>
 
 <h1>
@@ -521,6 +522,9 @@ fileA
 <h1>
 <a id="changelog" class="anchor" href="#changelog" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Changelog<a name="Changelog"></a>
 </h1>
+
+<p>V4.2.1
+Seperate ajax related stuff into seperate package, <a href="https://github.com/winterland1989/ajax-action">ajax-action</a>.</p>
 
 <p>V4.2.0
 <code>prototype.guard</code> now accpet an extra parameter(before cb) to guard Error based on their message (prefix). </p>
