@@ -17,7 +17,7 @@ Action.js, a fast, small, full feature async library
     + `Action.co` to work with generator functions.
     + [Signal and pump](https://github.com/winterland1989/Action.js/wiki/Signal-And-Pump) provides easy and composable async UI management(form validation...).
 
-＋ Eco-system
++ Eco-system:
     + [ajax-action](https://github.com/winterland1989/ajax-action)
 
 What is `Action`
