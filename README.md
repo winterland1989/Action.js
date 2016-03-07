@@ -517,7 +517,7 @@ The choice of using `Error` to skip `next` and hit `guard` is not arbitrary, ins
 Changelog<a name="Changelog"></a>
 =================================
 
-V4.2.1
+V4.2.2
 Seperate ajax related stuff into seperate package, [ajax-action](https://github.com/winterland1989/ajax-action).
 
 V4.2.0
