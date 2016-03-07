@@ -5,7 +5,6 @@ Action.js, a fast, small, full feature async library
 + [Changelog](#Changelog)
 + [Benchmark](https://github.com/winterland1989/Action.js/wiki/Benchmark)
 + [API document](https://github.com/winterland1989/Action.js/wiki/API-document)
-+ [ajaxHelpers API doc](https://github.com/winterland1989/Action.js/wiki/ajaxHelpers-API-document)
 + Usage: 
     + `npm i action-js` and `var Action = require('action-js')`.
     + Clone this repo and use `Action.js` and `ajaxHelper.js` with AMD or CMD loader, bundler.
@@ -17,7 +16,9 @@ Action.js, a fast, small, full feature async library
     + [Cancellable](https://github.com/winterland1989/Action.js/wiki/Return-value-of-go) and [retriable](https://github.com/winterland1989/Action.js/wiki/Difference-from-Promise) semantics.
     + `Action.co` to work with generator functions.
     + [Signal and pump](https://github.com/winterland1989/Action.js/wiki/Signal-And-Pump) provides easy and composable async UI management(form validation...).
-    + Provide `ajax`, `jsonp` for front-end usage, check `ajaxHelper.js` and [ajaxHelpers API doc](https://github.com/winterland1989/Action.js/wiki/ajaxHelpers-API-document).
+
+＋ Eco-system
+    + [ajax-action](https://github.com/winterland1989/ajax-action)
 
 What is `Action`
 ----------------
@@ -432,7 +433,7 @@ That's all core functions of `Action`, but it's much more powerful than first lo
 
 + [API doc](https://github.com/winterland1989/Action.js/wiki/API-document) for interesting things like `Action.parallel`, `Action.race`, `Action.throttle` and `Action.retry`.
 
-+ [ajaxHelpers API doc](https://github.com/winterland1989/Action.js/wiki/ajaxHelpers-API-document) for front-end needs like `ajax`, `jsonp` and `parseParam/buildParam`.
++ [ajax-action](https://github.com/winterland1989/ajax-action) for front-end needs like `ajax`, `jsonp` and `parseParam/buildParam`.
 
 FAQ<a name="FAQ"></a>
 =====================
@@ -515,6 +516,9 @@ The choice of using `Error` to skip `next` and hit `guard` is not arbitrary, ins
 
 Changelog<a name="Changelog"></a>
 =================================
+
+V4.2.1
+Seperate ajax related stuff into seperate package, [ajax-action](https://github.com/winterland1989/ajax-action).
 
 V4.2.0
 `prototype.guard` now accpet an extra parameter(before cb) to guard Error based on their message (prefix). 
