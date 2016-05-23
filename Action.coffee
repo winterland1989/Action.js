@@ -139,10 +139,11 @@ Action.throttle = (actions, n, stopAtError = false) ->
             resultArray = new Array(l)
             fireByIndex = (index) -> (data) ->
                 countDown--
-                if data instanceof Error and stopAtError and countDown != -1
+                if data instanceof Error and stopAtError
+                    cb?(data)
+                    cb = undefined
                     countDown = -1
-                    cb data
-                else
+                else if countDown >= 0
                     resultArray[index] = data
                     if countDown == 0 then cb resultArray
                     else if countUp < l

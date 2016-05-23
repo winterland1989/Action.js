@@ -517,6 +517,9 @@ The choice of using `Error` to skip `next` and hit `guard` is not arbitrary, ins
 Changelog<a name="Changelog"></a>
 =================================
 
+V4.3.0
+fix a nasty bug, failing an Action in `parallel/sequence/throttle..` with `stopAtError = true` should pass first `Error` down only once.
+
 V4.2.2
 Seperate ajax related stuff into seperate package, [ajax-action](https://github.com/winterland1989/ajax-action).
 

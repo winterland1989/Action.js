@@ -251,10 +251,13 @@
         fireByIndex = function(index) {
           return function(data) {
             countDown--;
-            if (data instanceof Error && stopAtError && countDown !== -1) {
-              countDown = -1;
-              return cb(data);
-            } else {
+            if (data instanceof Error && stopAtError) {
+              if (typeof cb === "function") {
+                cb(data);
+              }
+              cb = void 0;
+              return countDown = -1;
+            } else if (countDown >= 0) {
               resultArray[index] = data;
               if (countDown === 0) {
                 return cb(resultArray);
